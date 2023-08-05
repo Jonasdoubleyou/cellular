@@ -1,0 +1,49 @@
+.block {
+    background-color: var(--secondary);
+    color: var(--primary);
+    padding: 20px;
+    min-height: 80px;
+}
+
+.block-header {
+    display: flex;
+    flex-direction: row;
+}
+
+.block-footer {
+    display: flex;
+    flex-direction: row;
+}
+
+.block-title {
+    font-weight: bold;
+    padding: 10px 30px 10px 0;
+}
+
+.block-title-edit {
+    display: flex;
+    flex-direction: row;
+}
+
+.block-title-input {
+    border: none;
+    color: var(--darkgrey);
+    width: auto;
+}
+
+.block-connector {
+    margin: 20px 0 20px 50px;
+    padding: 10px 50px;
+    color: var(--secondary);
+    border-left: thin solid var(--secondary);
+}
+
+.block-row {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.block-row > .block {
+    flex-grow: 1;
+}

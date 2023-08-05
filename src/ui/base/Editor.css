@@ -1,0 +1,15 @@
+.editor {
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-content {
+    white-space: pre-wrap;
+}
+
+.editor-actions {
+    display: flex;
+    flex-direction: row;
+    margin-top: 5px;
+    gap: 5px;
+}
