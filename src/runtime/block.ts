@@ -1,6 +1,6 @@
 import type { Runtime } from ".";
 import { Block, DataSourceBlock, ScriptBlock, VisualizeBlock } from "../model/block";
-import { VariableRecord } from "../model/variables";
+import { Variable, VariableRecord } from "../model/variables";
 import { analyzeScript } from "./script/analyze";
 
 export type RunResult = { at: number, variables: VariableRecord };
@@ -59,6 +59,27 @@ export abstract class RuntimeBlock<BlockType extends Block> {
         return result;
     }
 
+    getInputVariables(): Readonly<Variable>[] {
+        const result = [];
+        for (const input of this.block.inputs) {
+            const itsOutput = this.runtime.getRuntimeBlock(input.blockID).block.output;
+            for (const name of input.variables) {
+                const variable = itsOutput.find(it => it.name === name);
+                if (!variable) {
+                    throw new Error(`Missing Variable '${name}', Block ${this.block.blockID} expected it to be an output of Block ${input.blockID}`);
+                }
+
+                result.push(variable);
+            }
+        }
+
+        return result;
+    }
+
+    getOutputVariables(): Readonly<Readonly<Variable>[]> {
+        return this.block.output;
+    }
+
     async getOutput(): Promise<VariableRecord> {
         if (this.hasValidResult()) {
             console.log(`${this.block.blockID} - Returning cached Output`, this.lastRunResult);
@@ -98,10 +119,10 @@ export abstract class RuntimeBlock<BlockType extends Block> {
     }
 }
 
-class ScriptRuntimeBlock extends RuntimeBlock<ScriptBlock> {
+export class ScriptRuntimeBlock extends RuntimeBlock<ScriptBlock> {
     executeUpdate(update: Partial<ScriptBlock>): Partial<ScriptBlock> {
         if (update.script) {
-            analyzeScript(update.script, this.runtime);
+            analyzeScript(update.script, this);
         }
 
         return update;
