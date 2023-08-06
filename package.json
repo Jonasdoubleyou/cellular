@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@babel/parser": "^7.22.7",
-    "@babel/traverse": "^7.22.8",
     "@monaco-editor/react": "^4.5.1",
     "@types/node": "^16.18.39",
     "@types/react": "^18.2.17",
