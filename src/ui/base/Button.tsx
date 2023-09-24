@@ -1,7 +1,7 @@
 import "./Button.css"
 
-export function ButtonList({ children }: React.PropsWithChildren<{}>) {
-    return <div className="button-list">
+export function ButtonList({ children, right }: React.PropsWithChildren<{ right?: boolean }>) {
+    return <div className={right ? "button-list button-list-right" : "button-list"}>
         {children}
     </div>
 }

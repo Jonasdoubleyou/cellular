@@ -1,9 +1,12 @@
 .editor {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .editor-content {
+    margin: 20px 0px;
+    flex-grow: 1;
     white-space: pre-wrap;
 }
 
@@ -12,4 +15,5 @@
     flex-direction: row;
     margin-top: 5px;
     gap: 5px;
+    margin: 20px 0px;
 }

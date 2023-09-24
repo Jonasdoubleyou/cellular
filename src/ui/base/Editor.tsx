@@ -1,10 +1,22 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import "./Editor.css";
 import { IconButton } from "./Icons";
 
 export function Editor({ markdown, onFinish }: { markdown: string, onFinish: (markdown: string) => void }) {
     const [edit, setEdit] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
+
+    // When the Editor is opened for editing, focus it with the cursor and move the cursor to the end of the doc
+    useLayoutEffect(() => { 
+        if (editorRef.current) {
+            editorRef.current.focus(); 
+            const range = document.createRange();
+            range.selectNodeContents(editorRef.current);
+            range.collapse(false);
+            window.getSelection()?.removeAllRanges();
+            window.getSelection()?.addRange(range);
+        }
+    }, [edit]);
 
     const [rendered, setRendered] = useState(() => renderMarkdown(markdown));
 
