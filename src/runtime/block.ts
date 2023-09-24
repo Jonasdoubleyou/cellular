@@ -1,11 +1,12 @@
 import type { Runtime } from ".";
-import { Block, BlockID, DataSourceBlock, ScriptBlock, VisualizeBlock } from "../model/block";
-import { Variable, VariableRecord } from "../model/variables";
+import { Block, BlockID, BlockInput, DataSourceBlock, ScriptBlock, VisualizeBlock } from "../model/block";
+import { Type, Variable, VariableRecord, isAssignableTo } from "../model/variables";
 import { analyzeScript } from "./script/analyze";
 import { runScript } from "./script/run";
 
 export type RunResult = { at: number, variables: VariableRecord | null, errors: Error[] };
 type OnRunHandler = (runResult: RunResult) => void;
+type InputChangeHandler = (input: VariableRecord) => void;
 
 export abstract class RuntimeBlock<BlockType extends Block = Block> {
     blockID: BlockID;
@@ -24,6 +25,20 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
         return () => { this.runHandlers = this.runHandlers.filter(it => it !== handler) };
     }
 
+    inputHandlers: InputChangeHandler[] = [];
+    onInputChange(handler: InputChangeHandler) {
+        this.inputHandlers.push(handler);
+
+        return () => { this.inputHandlers = this.inputHandlers.filter(it => it !== handler)};
+    }
+
+    async notifyInputChange() {
+        if (this.inputHandlers.length === 0) return;
+
+        const input = await this.getInput();
+        for (const handler of this.inputHandlers) handler(input);
+    }
+    
     getBlock() {
         return this.runtime.getBlock(this.blockID) as Readonly<BlockType>;
     }
@@ -60,8 +75,10 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
         const result: VariableRecord = {};
         for (const input of this.getBlock().inputs) {
             const inputBlock = this.runtime.getRuntimeBlock(input.blockID);
-            const inputVariables = await inputBlock.getOutput();
+            const inputVariables = (await inputBlock.getOutput()).variables;
             for (const [name, value] of Object.entries(inputVariables)) {
+                if (!input.variables.includes(name)) continue;
+
                 if (name in result) {
                     throw new Error(`Input Variable collision of '${name}'`);
                 }
@@ -89,6 +106,23 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
         }
 
         return result;
+    }
+
+    getPotentialInputs(type?: Type) {
+        const result: { blockID: string, variable: Variable }[] = [];
+
+        for (const input of this.runtime.getStore().getAllInputVariables(this.getBlock())) {
+            if (!type || isAssignableTo(input.variable.type, /* to */ type)) {
+                result.push(input);
+            }
+        }
+
+        return result;
+    }
+
+    setInput(inputs: BlockInput[]) {
+        this.update({ inputs } as any);
+        this.notifyInputChange();
     }
 
     getOutputVariables(): Readonly<Readonly<Variable>[]> {
@@ -144,6 +178,8 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
             handler(result);
         }
 
+        this.runtime.notifyOutputChange(this.getBlock());
+
         return result;
     }
 
@@ -193,7 +229,7 @@ class DatasourceRuntimeBlock extends RuntimeBlock<DataSourceBlock> {
 
 class VisualizeRuntimeBlock extends RuntimeBlock<VisualizeBlock> {
     executeUpdate(update: Partial<VisualizeBlock>): Partial<VisualizeBlock> {
-        throw new Error("Method not implemented.");
+        return update;
     }
     async execute(input: VariableRecord): Promise<VariableRecord> {
         // TODO : Calculate visual

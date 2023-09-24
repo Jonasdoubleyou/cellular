@@ -1,5 +1,6 @@
 import { Block, BlockID } from "../model/block";
 import { CellularModel } from "../model/model";
+import { Variable } from "../model/variables";
 
 type BlockListListener = (blockList: Readonly<Readonly<Block>[]>) => void;
 type BlockUpdateListener<BlockType> = (block: Readonly<BlockType>) => void;
@@ -10,6 +11,9 @@ export interface ReadonlyModelStore {
 
     getBlocks(): Readonly<Readonly<Block>[]>;
     getBlock<BlockType extends Block = Block>(blockID: BlockID): Readonly<BlockType>;
+
+    getBlocksBefore(block: Readonly<Block>): Generator<Block>;
+    getAllInputVariables(block: Readonly<Block>): Generator<{ blockID: BlockID, variable: Variable }>;
 }
 
 export class ModelStore implements ReadonlyModelStore {
@@ -82,7 +86,7 @@ export class ModelStore implements ReadonlyModelStore {
     }
 
     // All Blocks before a Block could be their input
-    *getBlocksBefore(block: Block) {
+    *getBlocksBefore(block: Readonly<Block>) {
         const pos = this.currentModel.blocks.findIndex(it => it.blockID === block.blockID);
         if (pos === -1) {
             throw new Error(`Block not found in Model`);
@@ -93,10 +97,30 @@ export class ModelStore implements ReadonlyModelStore {
         }
     }
 
-    *getAllInputVariables(block: Block) {
+    // All Blocks after a Block could use their output
+    *getBlocksAfter(block: Readonly<Block>) {
+        const pos = this.currentModel.blocks.findIndex(it => it.blockID === block.blockID);
+        if (pos === -1) {
+            throw new Error(`Block not found in Model`);
+        }
+
+        for (let i = pos + 1; i < this.currentModel.blocks.length; i++) {
+            yield this.currentModel.blocks[i];
+        }
+    }
+
+    *getAllInputVariables(block: Readonly<Block>) {
         for (const blockBefore of this.getBlocksBefore(block)) {
-            for (const out of blockBefore.output) {
-                yield out;
+            for (const variable of blockBefore.output) {
+                yield { blockID: blockBefore.blockID, variable };
+            }
+        }
+    }
+
+    *getDependenciesOf(block: Readonly<Block>) {
+        for (const blockAfter of this.getBlocksAfter(block)) {
+            if (blockAfter.inputs.some(it => it.blockID === block.blockID)) {
+                yield blockAfter;
             }
         }
     }

@@ -92,6 +92,12 @@ export class Runtime {
         return requiredInputs.filter(it => !fullfilled.has(it.name));
     }
 
+    notifyOutputChange(block: Readonly<Block>) {
+        for (const dependency of this.modelStore.getDependenciesOf(block)) {
+            this.getRuntimeBlock(dependency.blockID).notifyInputChange();
+        }
+    }
+
     removeBlock(block: Block) {
         this.runtimeBlocks.delete(block.blockID);
         console.log(`Runtime - Deleted Block(${block.blockID})`);
