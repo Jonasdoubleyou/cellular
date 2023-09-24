@@ -24,7 +24,7 @@ export function Icon ({ icon }: IconProps) {
 
 export function IconButton({ text, onClick, small, ...iconProps }: { icon: IconName, text?: string, small?: true, onClick?: () => void } & IconProps) {
     return (
-        <button className={"icon-button " + (small ? "icon-button_small" : "")} onClick={onClick}>
+        <button className={"icon-button no-print " + (small ? "icon-button_small" : "")} onClick={onClick}>
             <Icon {...iconProps} />
             {text && <div className="icon-button-text">{text}</div>}
         </button>

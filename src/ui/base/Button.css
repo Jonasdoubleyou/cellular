@@ -2,8 +2,23 @@
   display: flex;
   flex-direction: row;
   gap: 5px;
+  margin: 10px 0px;
 }
 
 .button-list-right {
     flex-direction: row-reverse;
+}
+
+.button {
+    cursor: pointer;
+    background-color: var(--primary);
+    color: var(--secondary);
+    padding: 10px;
+    margin: 0;
+}
+
+.button-highlight {
+    color: var(--primary);
+    background-color: var(--secondary);
+    border: thin solid var(--primary);
 }
