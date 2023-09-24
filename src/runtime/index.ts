@@ -95,6 +95,7 @@ export class Runtime {
     removeBlock(block: Block) {
         this.runtimeBlocks.delete(block.blockID);
         console.log(`Runtime - Deleted Block(${block.blockID})`);
+        this.modelStore.removeBlock(block);
     }
 
 
