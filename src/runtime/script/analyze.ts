@@ -3,6 +3,10 @@ import { isInside, visit, Visitor } from "./traverse";
 import { ScriptRuntimeBlock } from "../block";
 import { Variable } from "../../model/variables";
 
+export function isGlobalJS(variableName: string) {
+    return variableName in window;
+}
+
 export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) {
     const ast = parse(script, { annexB: false, attachComment: false, strictMode: true, errorRecovery: true });
     console.log(`Analzye Script`, ast);
@@ -55,6 +59,7 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
             enter(node) {
                 // a.b.c -> skip b and c, we only care about non members (= globals)
                 if (insideMember.is) return;
+                if (isGlobalJS(node.name)) return;
 
                 if (insideDeclaration.is) {
                     // in: a
@@ -124,5 +129,7 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
 
         runtimeBlock.setOutputVariables(outputVariables);
     }
-    
+    if (unknownReadVariables.size > 0) {
+        const missing = runtimeBlock.runtime.rewireInputs(runtimeBlock, [...unknownReadVariables].map(name => ({ name, type: { base: "any" }})));
+    }
 }

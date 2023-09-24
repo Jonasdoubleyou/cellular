@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { CellularModel } from '../model/model';
 import './App.css';
 import { ButtonList } from './base/Button';
 import { Icon, IconButton } from './base/Icons';
 import { ModelUI } from './model/Model';
+import { ModelStore } from '../runtime/store';
 
 function App() {
   const [model, _setModel] = useState<CellularModel>({
@@ -11,10 +12,7 @@ function App() {
     blocks: []
   });
 
-  const setModel = useCallback((model: CellularModel) => {
-     console.log(`Updated Model`, model);
-    _setModel(model);
-  }, []);
+  const store = useMemo(() => new ModelStore(model), [model]);
 
   return (
     <div className="app">
@@ -31,7 +29,7 @@ function App() {
 
           </div>
         </div>
-        <ModelUI model={model} setModel={setModel} />
+        <ModelUI store={store} />
     </div>
   );
 }

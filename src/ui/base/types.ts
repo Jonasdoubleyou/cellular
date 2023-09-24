@@ -7,8 +7,6 @@ import { RunResult } from "../../runtime/block";
 
 export interface BlockUIProps<It extends Block> {
     block: It;
-    updateBlock: UpdateBlock<It>;
-    removeBlock: (block: It) => void;
     runtime: Runtime;
 }
 

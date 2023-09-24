@@ -8,6 +8,8 @@ import { MarkdownBlockUI } from "../markdown/MarkdownBlock";
 import { ScriptBlockUI } from "../script/ScriptBlock";
 import { VisualizeBlockUI } from "../visualize/VisualizeBlock";
 import { AddBlock } from "./AddBlock";
+import { ModelStore } from "../../runtime/store";
+import { useBlockList } from "../base/store";
 
 export function getUIForBlock(props: BlockUIProps<Block>) {
     (props as any).key = props.block.blockID;
@@ -29,7 +31,7 @@ export function getUIForBlock(props: BlockUIProps<Block>) {
     }
 }
 
-export function partitionBlocks(blocks: Block[]): Block[][] {
+export function partitionBlocks(blocks: Readonly<Readonly<Block>[]>): Readonly<Block>[][] {
     const partitions: Block[][] = [[]];
     const currentPartition = () => partitions[partitions.length - 1];
     const lastBlock = () => {
@@ -54,38 +56,20 @@ export function partitionBlocks(blocks: Block[]): Block[][] {
     return partitions;
 }
 
-export function ModelUI({ model, setModel }: { model: CellularModel, setModel: (it: CellularModel) => void }) {
-    const runtime = useMemo(() => new Runtime(), []);
+export function ModelUI({ store }: { store: ModelStore }) {
+    const runtime = useMemo(() => new Runtime(store), [store]);
 
-    const updateBlock = useCallback((block: Block, update: Partial<Block>) => {
-        update = runtime.updateBlock(block, update);
-
-        const updatedBlocks = model!.blocks.map(it => it.blockID === block.blockID ? Object.assign({}, it, update) : it);
-        setModel(Object.assign({}, model, { blocks: updatedBlocks }));
-    }, [model, setModel]);
-
-    const addBlock = useCallback((block: Block) => {
-        runtime.addBlock(block);
-
-        setModel({ ...model, blocks: [...model.blocks, block]});
-    }, [model, setModel]);
-
-    const removeBlock = useCallback((block: Block) => {
-        runtime.removeBlock(block);
-
-        setModel({ ...model, blocks: model.blocks.filter(it => it.blockID !== block.blockID )});
-    }, [model, setModel]);
-
-    const partitions = partitionBlocks(model.blocks);
+    const blockList = useBlockList(store);
+    const partitions = partitionBlocks(blockList);
 
     return <>
         {partitions.map(partition => <>
             <BlockUI.Row>
-                {partition.map(block => getUIForBlock({ block, removeBlock, updateBlock, runtime }))}
+                {partition.map(block => getUIForBlock({ block, runtime }))}
             </BlockUI.Row>
             <BlockUI.Connecter />
         </>)}
-        <AddBlock model={model} add={addBlock} />
+        <AddBlock store={store} add={block => runtime.addBlock(block)} />
     </>
 
 }

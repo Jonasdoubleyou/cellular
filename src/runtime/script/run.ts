@@ -1,4 +1,4 @@
-import { VariableRecord } from "../../model/variables";
+import { VariableRecord, detectType, isAssignableTo, isSubtype, typeToString } from "../../model/variables";
 import { ScriptRuntimeBlock } from "../block";
 
 interface RunResult {
@@ -10,7 +10,7 @@ export function runScript(script: string, input: VariableRecord, runtimeBlock: S
 
     body += "/* -------- INPUT ------------ */\n";
     for (const input of runtimeBlock.getInputVariables()) {
-        body += `const { ${input.name} } = context.input;\n`;
+        body += `const { ${input.name} } = context.input.variables;\n`;
     }
 
     body += "/* -------- OUTPUT ----------- */\n";
@@ -38,6 +38,29 @@ export function runScript(script: string, input: VariableRecord, runtimeBlock: S
     console.log("Running function with context", context);
     const result = fn(context);
     console.log("Running function produced result", result)
+
+    for (const outputVariable of runtimeBlock.getOutputVariables()) {
+        if (!(outputVariable.name in result))
+            throw new Error(`Missing output ${outputVariable.name}`);
+
+        const value = result[outputVariable.name];
+        const valueType = detectType(value);
+        
+        if (!isAssignableTo(valueType, /* to */ outputVariable.type)) {
+            throw new Error(`Expected type ${typeToString(outputVariable.type)} but got ${typeToString(valueType)} for ${outputVariable.name}`);
+        }
+
+        if (isSubtype(valueType, /* of */ outputVariable.type)) {
+            runtimeBlock.updateOutputVariable({
+                name: outputVariable.name,
+                type: valueType
+            });
+
+            console.log(`Detected Runtime type ${typeToString(valueType)} for Variable ${outputVariable.name} (replacing ${typeToString(outputVariable.type)})`);
+        }
+    }
+
+    runtimeBlock.commitUpdates();
 
     return {
         output: result

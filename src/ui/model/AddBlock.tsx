@@ -1,12 +1,13 @@
 import { Block } from "../../model/block";
 import { CellularModel } from "../../model/model";
+import { ModelStore } from "../../runtime/store";
 import { BlockUI } from "../base/Block";
 import { ButtonList } from "../base/Button";
 import { IconButton } from "../base/Icons";
 
 const createBlockID = () => "" + Date.now();
 
-export function AddBlock({ model, add }: { model: CellularModel, add: (block: Block) => void }) {
+export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block) => void }) {
     function addScript() {
         add({
             type: "javascript",

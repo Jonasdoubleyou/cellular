@@ -23,9 +23,12 @@ const monacoOptions: editor.IStandaloneEditorConstructionOptions = {
 };
 
 function VariableUI({ variable, value }: { variable: Variable, value?: any }) {
+    console.log("VariableUI", variable, value);
+
     return <div className="variable">
         <div className="variable-name">{variable.name}</div>
         <div className="variable-type">({variable.type.base})</div>
+        {value !== undefined && <div className="variable-value">{": " + value}</div>}
     </div>;
 }
 
@@ -38,19 +41,19 @@ function RunResultUI({ runResult, rb }: { runResult: RunResult, rb: RuntimeBlock
         </div>
         <div className="run-result-separator"> -&gt; </div>
         <div className="run-result-output">
-            ( {rb.getOutputVariables().map(it => <VariableUI variable={it} />)} )
+            ( {rb.getOutputVariables().map(it => <VariableUI variable={it} value={runResult.variables[it.name]} />)} )
         </div>
     </div>
 }
 
-export function ScriptBlockUI({ block, updateBlock, removeBlock, runtime }: BlockUIProps<ScriptBlock>) {
+export function ScriptBlockUI({ block, runtime }: BlockUIProps<ScriptBlock>) {
     const editor = useRef<editor.IStandaloneCodeEditor>();
     const rb = useRuntimeBlock(block, runtime);
     const runResult = useRunResult(block, runtime);
 
     function save() {
         const newScript = editor.current!.getModel()!.getValue();
-        updateBlock(block, { script: newScript });
+        runtime.updateBlock(block, { script: newScript });
     }
 
     useEffect(() => {
@@ -61,11 +64,11 @@ export function ScriptBlockUI({ block, updateBlock, removeBlock, runtime }: Bloc
 
     return <BlockUI>
         <BlockUI.Header>
-            <BlockUI.Title title={<Editable text={block.title} onFinish={title => updateBlock(block, { title })} />} />
+            <BlockUI.Title title={<Editable text={block.title} onFinish={title => runtime.updateBlock(block, { title })} />} />
             <ButtonList>
+                <IconButton icon="play_arrow" text="Save & Run" onClick={() => { save(); rb.getOutput(); }}/>
                 <IconButton icon="save" text="Save" onClick={save} />
-                <IconButton icon="play_arrow" text="Run" onClick={() => { rb.getOutput(); }}/>
-                <IconButton icon="cancel" onClick={() => removeBlock(block)} />
+                <IconButton icon="cancel" onClick={() => runtime.removeBlock(block)} />
             </ButtonList>
         </BlockUI.Header>
         <div className="script-block">

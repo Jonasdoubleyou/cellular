@@ -1,11 +1,22 @@
-import { Block, BlockID } from "../model/block";
+import { Block, BlockID, BlockInput } from "../model/block";
 import { CellularModel } from "../model/model";
+import { Variable, isAssignableTo } from "../model/variables";
 import { RuntimeBlock } from "./block";
+import { ModelStore } from "./store";
 
 export class Runtime {
     // State Management
 
     runtimeBlocks = new Map<BlockID, RuntimeBlock<Block>>();
+    
+    constructor(private modelStore: ModelStore) {
+        for (const block of modelStore.getBlocks())
+            this.addRuntimeBlock(block);
+    }
+
+    getBlock(blockID: BlockID) {
+        return this.modelStore.getBlock(blockID);
+    }
 
     getRuntimeBlock(blockID: BlockID): RuntimeBlock<Block> {
         const block = this.runtimeBlocks.get(blockID);
@@ -16,14 +27,13 @@ export class Runtime {
         return block;
     }
 
-    // Model Management
-
-    initialize(model: CellularModel) {
-        for (const block of model.blocks)
-            this.addBlock(block);
-    }
 
     addBlock(block: Block) {
+        this.modelStore.addBlock(block);
+        this.addRuntimeBlock(block);
+    }
+
+    addRuntimeBlock(block: Block) {
         const runtimeBlock = RuntimeBlock.create(block, this);
         if (runtimeBlock) {
             this.runtimeBlocks.set(block.blockID, runtimeBlock);
@@ -33,15 +43,52 @@ export class Runtime {
 
     // enriches a block update with runtime information, i.e. if a code block changes
     // recalculate the dependencies
-    updateBlock(block: Block, update: Partial<Block>): Partial<Block> {
+    updateBlock(block: Readonly<Block>, update: Partial<Block>) {
         const runtimeBlock = this.runtimeBlocks.get(block.blockID);
         if (runtimeBlock) {
-            const result = runtimeBlock.update(update);
-            console.log(`Runtime - Updated Block(${block.blockID})`, update, result);
-            return result;
+            runtimeBlock.update(update);
+            console.log(`Runtime - Updated Block(${block.blockID})`, update);
+            return;
         }
-        
-        return update;
+
+        this._updateBlock(block, update);
+    }
+
+    _updateBlock(block: Readonly<Block>, update: Partial<Block>) {
+        this.modelStore.updateBlock(block, update);
+    }
+
+    rewireInputs(runtimeBlock: RuntimeBlock, requiredInputs: Variable[]) {
+        const fullfilled: Set<string> = new Set();
+
+        for (const existingInput of runtimeBlock.getBlock().inputs) {
+            const block = this.modelStore.getBlock(existingInput.blockID);
+            const existing = requiredInputs.filter(it => block.output.some(out => out.name === it.name && isAssignableTo(out.type, it.type)));
+            for (const it of existing) {
+                if (fullfilled.has(it.name)) continue;
+
+                existingInput.variables.push(it.name);
+                fullfilled.add(it.name);
+            }
+        }
+
+        for (const blockBefore of this.modelStore.getBlocksBefore(runtimeBlock.getBlock())) {
+            const existing = requiredInputs.filter(it => blockBefore.output.some(out => out.name === it.name && isAssignableTo(out.type, it.type)));
+            if (existing.length > 0) {
+                const input: BlockInput = { blockID: blockBefore.blockID, variables: [] };
+    
+                for (const it of existing) {
+                    if (fullfilled.has(it.name)) continue;
+
+                    input.variables.push(it.name);
+                    fullfilled.add(it.name);
+                }
+
+                if (input.variables.length) runtimeBlock.getBlock().inputs.push(input);
+            }            
+        }
+
+        return requiredInputs.filter(it => !fullfilled.has(it.name));
     }
 
     removeBlock(block: Block) {

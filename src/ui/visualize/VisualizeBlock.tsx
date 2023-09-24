@@ -6,12 +6,12 @@ import { IconButton } from "../base/Icons";
 import { BlockUIProps } from "../base/types";
 
 
-export function VisualizeBlockUI({ block, removeBlock }: BlockUIProps<VisualizeBlock>) {
+export function VisualizeBlockUI({ block, runtime }: BlockUIProps<VisualizeBlock>) {
     return <BlockUI>
         <BlockUI.Header>
             <BlockUI.Title title={<Editable text={block.name} onFinish={() => {}} />} />
             <ButtonList>
-                <IconButton icon="cancel" onClick={() => removeBlock(block)} />
+                <IconButton icon="cancel" onClick={() => runtime.removeBlock(block)} />
             </ButtonList>
         </BlockUI.Header>
     </BlockUI>;
