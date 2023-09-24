@@ -11,23 +11,24 @@ import { AddBlock } from "./AddBlock";
 import { ModelStore } from "../../runtime/store";
 import { useBlockList } from "../base/store";
 
-export function getUIForBlock(props: BlockUIProps<Block>) {
-    (props as any).key = props.block.blockID;
+export function getUIForBlock(props: BlockUIProps) {
+    (props as any).key = props.blockID;
 
-    if (props.block.type === "datasource") {
+    const block = props.runtime.getBlock(props.blockID);
+    if (block.type === "datasource") {
         return <>TODO</>;      
     }
 
-    if (props.block.type === "javascript") {
-        return <ScriptBlockUI {...(props as BlockUIProps<ScriptBlock>)} />;
+    if (block.type === "javascript") {
+        return <ScriptBlockUI {...props} />;
     }
 
-    if (props.block.type === "markdown") {
-        return <MarkdownBlockUI {...(props as BlockUIProps<MarkdownBlock>)} />;
+    if (block.type === "markdown") {
+        return <MarkdownBlockUI {...props} />;
     }
 
-    if (props.block.type === "visualize") {
-        return <VisualizeBlockUI {...(props as BlockUIProps<VisualizeBlock>)} />;
+    if (block.type === "visualize") {
+        return <VisualizeBlockUI {...props} />;
     }
 }
 
@@ -65,7 +66,7 @@ export function ModelUI({ store }: { store: ModelStore }) {
     return <>
         {partitions.map(partition => <>
             <BlockUI.Row>
-                {partition.map(block => getUIForBlock({ block, runtime }))}
+                {partition.map(block => getUIForBlock({ blockID: block.blockID, runtime }))}
             </BlockUI.Row>
             <BlockUI.Connecter />
         </>)}

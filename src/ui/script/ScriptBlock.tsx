@@ -13,6 +13,7 @@ import { BlockUIProps, useRunResult, useRuntimeBlock } from "../base/types";
 import { ButtonList } from "../base/Button";
 import { RunResult, RuntimeBlock } from "../../runtime/block";
 import { Variable } from "../../model/variables";
+import { useBlock } from "../base/store";
 
 const monacoOptions: editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,
@@ -53,29 +54,29 @@ function RunResultUI({ runResult, rb }: { runResult: RunResult, rb: RuntimeBlock
     </div>
 }
 
-export function ScriptBlockUI({ block, runtime }: BlockUIProps<ScriptBlock>) {
+export function ScriptBlockUI({ blockID, runtime }: BlockUIProps) {
     const editor = useRef<editor.IStandaloneCodeEditor>();
-    const rb = useRuntimeBlock(block, runtime);
-    const runResult = useRunResult(block, runtime);
+    const rb = useRuntimeBlock(blockID, runtime);
+    const runResult = useRunResult(blockID, runtime);
 
     function save() {
         const newScript = editor.current!.getModel()!.getValue();
-        runtime.updateBlock(block, { script: newScript });
+        runtime.updateBlock(runtime.getBlock(blockID), { script: newScript });
     }
 
     useEffect(() => {
         if (editor.current) {
-            setupEditor(editor.current, block);
+            setupEditor(editor.current, runtime.getBlock(blockID));
         }
-    }, [block.script]);
+    }, [runtime, blockID]);
 
     return <BlockUI>
         <BlockUI.Header>
-            <BlockUI.Title title={<Editable text={block.title} onFinish={title => runtime.updateBlock(block, { title })} />} />
+            <BlockUI.Title title={<ScriptBlockTitle blockID={blockID} runtime={runtime} />} />
             <ButtonList>
                 <IconButton icon="play_arrow" text="Save & Run" onClick={() => { save(); rb.getOutput(); }}/>
                 <IconButton icon="save" text="Save" onClick={save} />
-                <IconButton icon="cancel" onClick={() => runtime.removeBlock(block)} />
+                <IconButton icon="cancel" onClick={() => runtime.removeBlock(runtime.getBlock(blockID))} />
             </ButtonList>
         </BlockUI.Header>
         <div className="script-block">
@@ -83,4 +84,10 @@ export function ScriptBlockUI({ block, runtime }: BlockUIProps<ScriptBlock>) {
         </div>
         {runResult && <RunResultUI runResult={runResult} rb={rb} />}
     </BlockUI>
+}
+
+function ScriptBlockTitle({ blockID, runtime }: BlockUIProps) {
+    const block = useBlock<ScriptBlock>(runtime.getStore(), blockID);
+
+    return <Editable text={block.title} onFinish={title => runtime.updateBlock(block, { title })} />
 }

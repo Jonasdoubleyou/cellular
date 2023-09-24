@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Block, BlockID } from "../../model/block";
-import { ModelStore } from "../../runtime/store";
+import { ModelStore, ReadonlyModelStore } from "../../runtime/store";
 
-export const useBlockList = (store: ModelStore) => {
+export const useBlockList = (store: ReadonlyModelStore) => {
     const [list, setList] = useState<Readonly<Readonly<Block>[]>>([]);
 
     useEffect(() => store.listen(setList), [store]);
@@ -10,10 +10,10 @@ export const useBlockList = (store: ModelStore) => {
     return list;
 };
 
-export const useBlock = (store: ModelStore, blockID: BlockID) => {
-    const [block, setBlock] = useState<Readonly<Block>>(store.getBlock(blockID));
+export const useBlock = <BlockType extends Block = Block>(store: ReadonlyModelStore, blockID: BlockID) => {
+    const [block, setBlock] = useState<Readonly<BlockType>>(store.getBlock<BlockType>(blockID));
 
-    useEffect(() => store.listenForBlock(store.getBlock(blockID), setBlock), [store, setBlock, blockID]);
+    useEffect(() => store.listenForBlock(store.getBlock<BlockType>(blockID), setBlock), [store, setBlock, blockID]);
 
     return block;
 }

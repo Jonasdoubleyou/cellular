@@ -2,9 +2,17 @@ import { Block, BlockID } from "../model/block";
 import { CellularModel } from "../model/model";
 
 type BlockListListener = (blockList: Readonly<Readonly<Block>[]>) => void;
-type BlockUpdateListener = (block: Readonly<Block>) => void;
+type BlockUpdateListener<BlockType> = (block: Readonly<BlockType>) => void;
 
-export class ModelStore {
+export interface ReadonlyModelStore {
+    listen(listener: BlockListListener): () => void;
+    listenForBlock<BlockType extends Block = Block>(block: Readonly<BlockType>, listener: BlockUpdateListener<BlockType>): () => void;
+
+    getBlocks(): Readonly<Readonly<Block>[]>;
+    getBlock<BlockType extends Block = Block>(blockID: BlockID): Readonly<BlockType>;
+}
+
+export class ModelStore implements ReadonlyModelStore {
     private currentModel: Readonly<CellularModel>;
     private originalModel: Readonly<CellularModel>;
 
@@ -14,15 +22,15 @@ export class ModelStore {
     }
     
     blockListListeners: BlockListListener[] = [];
-    blockUpdateListener: Map<BlockID, BlockUpdateListener[]> = new Map();
+    blockUpdateListener: Map<BlockID, BlockUpdateListener<Block>[]> = new Map();
 
-    listen(listener: BlockListListener) {
+    listen(listener: BlockListListener): () => void {
         this.blockListListeners.push(listener);
         return () => { this.blockListListeners = this.blockListListeners.filter(it => it !== listener) };
     }
 
-    listenForBlock(block: Block, listener: BlockUpdateListener) {
-        this.blockUpdateListener.get(block.blockID)!.push(listener);
+    listenForBlock<BlockType extends Block = Block>(block: Readonly<BlockType>, listener: BlockUpdateListener<BlockType>): () => void {
+        this.blockUpdateListener.get(block.blockID)!.push(listener as BlockUpdateListener<Block>);
     
         return () => {
             const listeners = this.blockUpdateListener.get(block.blockID);
@@ -62,15 +70,15 @@ export class ModelStore {
     }
 
 
-    getBlocks() { return this.currentModel.blocks };
+    getBlocks(): Readonly<Readonly<Block>[]> { return this.currentModel.blocks };
 
-    getBlock(blockID: BlockID): Readonly<Block> {
+    getBlock<BlockType extends Block = Block>(blockID: BlockID): Readonly<BlockType> {
         const result = this.currentModel.blocks.find(it => it.blockID === blockID);
         if (!result) {
             throw new Error(`Could not find Block(${blockID})`);
         }
 
-        return result;
+        return result as BlockType;
     }
 
     // All Blocks before a Block could be their input

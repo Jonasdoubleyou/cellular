@@ -1,8 +1,7 @@
 import { Block, BlockID, BlockInput } from "../model/block";
-import { CellularModel } from "../model/model";
 import { Variable, isAssignableTo } from "../model/variables";
 import { RuntimeBlock } from "./block";
-import { ModelStore } from "./store";
+import { ModelStore, ReadonlyModelStore } from "./store";
 
 export class Runtime {
     // State Management
@@ -14,8 +13,10 @@ export class Runtime {
             this.addRuntimeBlock(block);
     }
 
-    getBlock(blockID: BlockID) {
-        return this.modelStore.getBlock(blockID);
+    getStore(): ReadonlyModelStore { return this.modelStore; }
+
+    getBlock<BlockType extends Block = Block>(blockID: BlockID): Readonly<BlockType> {
+        return this.modelStore.getBlock(blockID) as BlockType;
     }
 
     getRuntimeBlock(blockID: BlockID): RuntimeBlock<Block> {
