@@ -3,3 +3,12 @@
     flex-direction: row;
 }
 
+.editable-text {
+    line-height: 30px;
+}
+
+.editable-buttons {
+    display: flex;
+    flex-direction: row;
+    padding-left: 20px;
+}

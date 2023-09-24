@@ -35,9 +35,9 @@ export function Editable({ text, onFinish }: { text: string, onFinish: (newText:
         <div className="editable-text" contentEditable ref={textRef} onFocus={() => setEdit(true)} onKeyDown={handleEnter}>
             {text}
         </div>
-        {edit && <>
+        {edit && <div className="editable-buttons">
             <IconButton small icon="save" onClick={save} />
             <IconButton small icon="cancel" onClick={cancel} />
-        </>}
+        </div>}
     </div>;
 }
