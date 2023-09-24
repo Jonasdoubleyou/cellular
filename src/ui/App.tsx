@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CellularModel } from '../model/model';
 import './App.css';
 import { ButtonList } from './base/Button';
@@ -13,6 +13,10 @@ function App() {
   });
 
   const store = useMemo(() => new ModelStore(model), [model]);
+
+  useEffect(() => {
+    window.document.title = `${model.title} - Cellular`;
+  }, [model]);
 
   return (
     <div className="app">
