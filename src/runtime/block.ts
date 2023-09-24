@@ -4,7 +4,7 @@ import { Variable, VariableRecord } from "../model/variables";
 import { analyzeScript } from "./script/analyze";
 import { runScript } from "./script/run";
 
-export type RunResult = { at: number, variables: VariableRecord };
+export type RunResult = { at: number, variables: VariableRecord | null, errors: Error[] };
 type OnRunHandler = (runResult: RunResult) => void;
 
 export abstract class RuntimeBlock<BlockType extends Block = Block> {
@@ -34,9 +34,18 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
     }
 
     update(update: Partial<BlockType>) {
-        this.lastChangedAt = Date.now();
-        update = this.executeUpdate(update);
-        this.runtime._updateBlock(this.getBlock(), update);
+        try {
+            update = this.executeUpdate(update);
+            this.lastChangedAt = Date.now();
+            this.runtime._updateBlock(this.getBlock(), update);
+        } catch(error) {
+            const updateResult: RunResult = { at: Date.now(), errors: [error as Error], variables: null };
+            this.lastRunResult = updateResult;
+
+            for (const handler of this.runHandlers) {
+                handler(updateResult);
+            }
+        }
     }
 
     protected abstract executeUpdate(update: Partial<BlockType>): Partial<BlockType>;
@@ -120,12 +129,16 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
             return this.lastRunResult!;
         }
 
-        const input = await this.getInput();
-        const variables = await this.execute(input);
-        const result: RunResult = { at: Date.now(), variables };
-        this.lastRunResult = result;
+        const result: RunResult = { at: Date.now(), variables: null, errors: [] };
+        try {
+            const input = await this.getInput();
+            result.variables = await this.execute(input);
+            this.lastRunResult = result;
 
-        console.log(`${this.blockID} - Computed Output`, result);
+            console.log(`${this.blockID} - Computed Output`, result);
+        } catch (error) {
+            result.errors.push(error as Error);
+        }
 
         for (const handler of this.runHandlers) {
             handler(result);

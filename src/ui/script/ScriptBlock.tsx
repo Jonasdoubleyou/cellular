@@ -33,16 +33,23 @@ function VariableUI({ variable, value }: { variable: Variable, value?: any }) {
 }
 
 function RunResultUI({ runResult, rb }: { runResult: RunResult, rb: RuntimeBlock<any> }) {
-    return <div className="run-result">
-        <div className="run-result-at">{new Date(runResult.at).toLocaleTimeString()}</div>
-        <div className="run-result-separator"> / </div>
-        <div className="run-result-input">
-            ( {rb.getInputVariables().map(it => <VariableUI variable={it} />) } )
+    return <div className="run-result-container">
+            <div className="run-result">
+            <div className="run-result-at">{new Date(runResult.at).toLocaleTimeString()}</div>
+            <div className="run-result-separator"> / </div>
+            <div className="run-result-input">
+                ( {rb.getInputVariables().map(it => <VariableUI variable={it} />) } )
+            </div>
+            <div className="run-result-separator"> -&gt; </div>
+            <div className="run-result-output">
+                ( {rb.getOutputVariables().map(it => <VariableUI variable={it} value={runResult.variables?.[it.name]} />)} )
+            </div>
         </div>
-        <div className="run-result-separator"> -&gt; </div>
-        <div className="run-result-output">
-            ( {rb.getOutputVariables().map(it => <VariableUI variable={it} value={runResult.variables[it.name]} />)} )
-        </div>
+        {runResult.errors.length > 0 && <div className="run-result-errors">
+            {runResult.errors.map(it => <div className="run-result-error">
+                {it.name}: {it.message}
+            </div>)}
+        </div>}    
     </div>
 }
 

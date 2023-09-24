@@ -131,5 +131,8 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
     }
     if (unknownReadVariables.size > 0) {
         const missing = runtimeBlock.runtime.rewireInputs(runtimeBlock, [...unknownReadVariables].map(name => ({ name, type: { base: "any" }})));
+        if (missing.length > 0) {
+            throw new Error(`Missing Input Variables: ${missing.map(it => it.name).join(", ")}`)
+        }
     }
 }
