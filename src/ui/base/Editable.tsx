@@ -8,27 +8,31 @@ export function Editable({ text, onFinish }: { text: string, onFinish: (newText:
     const textRef = useRef<HTMLDivElement>(null);
 
     const cancel = useCallback(() => {
+        if (!edit) return;
+
         setEdit(false);
         textRef.current!.textContent = text;
-    }, [text, setEdit, textRef]);
+    }, [edit, text, setEdit, textRef]);
 
     const save = useCallback(() => {
+        if (!edit) return;
+
         setEdit(false);
         if (textRef.current) {
             onFinish(textRef.current.textContent ?? '');
             textRef.current.blur();
         }
-    }, [setEdit, textRef, onFinish]);
+    }, [edit, setEdit, textRef, onFinish]);
 
     const handleEnter = useCallback((event: React.KeyboardEvent) => {
         if (event.key == 'Enter') {
             event.preventDefault();
             save();
         }
-    }, []);
+    }, [save]);
 
     return <div className="editable">
-        <div className="editable-text" contentEditable ref={textRef} onFocus={() => setEdit(true)} onBlur={cancel} onKeyDown={handleEnter}>
+        <div className="editable-text" contentEditable ref={textRef} onFocus={() => setEdit(true)} onKeyDown={handleEnter}>
             {text}
         </div>
         {edit && <>
