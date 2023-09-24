@@ -1,18 +1,38 @@
-import { Block } from "../../model/block";
+import { useState } from "react";
+import { Block, VisualizeBlock } from "../../model/block";
 import { CellularModel } from "../../model/model";
 import { ModelStore } from "../../runtime/store";
 import { BlockUI } from "../base/Block";
-import { ButtonList } from "../base/Button";
-import { IconButton } from "../base/Icons";
+import { Button, ButtonList, SelectButtonList } from "../base/Button";
+import { Icon, IconButton } from "../base/Icons";
 
 const createBlockID = () => "" + Date.now();
 
+const ONE_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
+    "number"
+];
+
+
+const TWO_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
+    "boxplot",
+    "histogram",
+    "table"
+];
+
+const THREE_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
+];
+
 export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block) => void }) {
+    const [chosenDimension, setChosenDimension] = useState<null | "1" | "2" | "3">(null);
+    const [chosenVisualization, setChosenVisualization] = useState<null | string>(null);
+
     function addScript() {
+        setChosenVisualization(null);
+        setChosenDimension(null);
         add({
             type: "javascript",
             blockID: createBlockID(),
-            script: "",
+            script: "Script",
             title: "",
             inputs: [],
             output: []
@@ -20,6 +40,8 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
     }
 
     function addMarkdown() {
+        setChosenVisualization(null);
+        setChosenDimension(null);
         add({
             type: "markdown",
             blockID: createBlockID(),
@@ -30,10 +52,12 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
     }
 
     function addDatasource() {
+        setChosenVisualization(null);
+        setChosenDimension(null);
         add({
             type: "datasource",
             blockID: createBlockID(),
-            name: "",
+            name: "Datasource",
             path: "",
             sourcetype: "json",
             inputs: [],
@@ -42,7 +66,17 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
     }
 
     function addVisualize() {
-
+        add({
+            type: "visualize",
+            blockID: createBlockID(),
+            dimensions: [],
+            graphtype: chosenVisualization as any,
+            inputs: [],
+            output: [],
+            name: "Visual"
+        })
+        setChosenVisualization(null);
+        setChosenDimension(null);
     }
 
     return <BlockUI>
@@ -53,7 +87,14 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
             <IconButton icon="add" text="Add Script" onClick={addScript} />
             <IconButton icon="add" text="Add Datasource" onClick={addDatasource} />
             <IconButton icon="add" text="Add Markdown" onClick={addMarkdown} />
-            <IconButton icon="add" text="Add Visualization" onClick={addVisualize} />
+            <IconButton icon="add" text="Add Visualization" onClick={() => setChosenDimension("1")} />
         </ButtonList>
+
+        {chosenDimension !== null && <SelectButtonList chosen={chosenDimension} onChose={setChosenDimension as any} options={["1", "2", "3"]} map={it => `${it} dimensional`} /> }
+        {chosenDimension === "1" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={ONE_D_VISUALIZATIONS} />}
+        {chosenDimension === "2" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={TWO_D_VISUALIZATIONS} />}
+        {chosenDimension === "3" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={THREE_D_VISUALIZATIONS} />}
+        
+        {chosenVisualization && <IconButton icon="add" onClick={addVisualize} text="Add" />}
     </BlockUI>
 }
