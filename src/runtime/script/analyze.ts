@@ -1,6 +1,7 @@
 import { parse } from "@babel/parser";
 import { isInside, visit, Visitor } from "./traverse";
 import { ScriptRuntimeBlock } from "../block";
+import { Variable } from "../../model/variables";
 
 export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) {
     const ast = parse(script, { annexB: false, attachComment: false, strictMode: true, errorRecovery: true });
@@ -108,4 +109,20 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
 
     console.log("Unknown Variables / Read", unknownReadVariables);
     console.log("                  / Written", unknownWrittenVariables);
+
+    if (unknownWrittenVariables.size) {
+        const outputVariables: Variable[] = [...runtimeBlock.getOutputVariables()];
+
+        for (const variable of unknownWrittenVariables.values()) {
+            outputVariables.push({
+                name: variable,
+                type: { base: "any" }
+            })
+        }
+
+        console.log("Assuming Determined Output Variables", outputVariables);
+
+        runtimeBlock.setOutputVariables(outputVariables);
+    }
+    
 }

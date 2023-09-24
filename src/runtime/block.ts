@@ -2,6 +2,7 @@ import type { Runtime } from ".";
 import { Block, DataSourceBlock, ScriptBlock, VisualizeBlock } from "../model/block";
 import { Variable, VariableRecord } from "../model/variables";
 import { analyzeScript } from "./script/analyze";
+import { runScript } from "./script/run";
 
 export type RunResult = { at: number, variables: VariableRecord };
 type OnRunHandler = (runResult: RunResult) => void;
@@ -9,6 +10,8 @@ type OnRunHandler = (runResult: RunResult) => void;
 export abstract class RuntimeBlock<BlockType extends Block> {
     block: BlockType;
     runtime: Runtime;
+
+    calculatedOutput: Variable[] | null = null;
 
     lastChangedAt: number | null = null;
     
@@ -33,7 +36,7 @@ export abstract class RuntimeBlock<BlockType extends Block> {
         return this.executeUpdate(update);
     }
 
-    abstract executeUpdate(update: Partial<BlockType>): Partial<BlockType>;
+    protected abstract executeUpdate(update: Partial<BlockType>): Partial<BlockType>;
 
     hasValidResult() {
         return this.lastRunResult && (!this.lastChangedAt || this.lastChangedAt < this.lastRunResult.at);
@@ -77,7 +80,11 @@ export abstract class RuntimeBlock<BlockType extends Block> {
     }
 
     getOutputVariables(): Readonly<Readonly<Variable>[]> {
-        return this.block.output;
+        return this.calculatedOutput ?? this.block.output;
+    }
+
+    setOutputVariables(calculatedOutput: Variable[]) {
+        this.calculatedOutput = calculatedOutput;
     }
 
     async getOutput(): Promise<VariableRecord> {
@@ -100,7 +107,7 @@ export abstract class RuntimeBlock<BlockType extends Block> {
         return result;
     }
 
-    abstract execute (input: VariableRecord): Promise<VariableRecord>;
+    protected abstract execute (input: VariableRecord): Promise<VariableRecord>;
 
     static create(block: Block, runtime: Runtime): RuntimeBlock<Block> | null {
         if (block.type === "javascript") {
@@ -128,7 +135,8 @@ export class ScriptRuntimeBlock extends RuntimeBlock<ScriptBlock> {
         return update;
     }
     async execute(input: VariableRecord): Promise<VariableRecord> {
-        throw new Error("Method not implemented.");
+        const result = runScript(this.block.script, input, this);
+        return result.output;
     }
 }
 

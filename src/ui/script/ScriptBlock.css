@@ -3,3 +3,26 @@
     width: 600px;
     height: 300px;
 }
+
+.run-result {
+    display: flex;
+    flex-direction: row;
+    font-style: italic;
+    padding: 10px 0;
+}
+
+.run-result-separator {
+    padding: 0 10px;
+}
+
+.run-result-input, .run-result-output {
+    
+}
+
+.variable {
+
+    display: inline-flex;
+    flex-direction: row;
+    padding: 0 10px;
+    text-decoration: underline;
+}

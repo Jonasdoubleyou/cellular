@@ -1,5 +1,5 @@
 export interface Type {
-    base: "number" | "boolean" | "string" | "array" | "object";
+    base: "any" | "number" | "boolean" | "string" | "array" | "object";
     instanceOf?: any;
 }
 
