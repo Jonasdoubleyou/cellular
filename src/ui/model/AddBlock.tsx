@@ -79,22 +79,24 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
         setChosenDimension(null);
     }
 
-    return <BlockUI>
-        <BlockUI.Header>
-            <BlockUI.Title title="Add a Block" />
-        </BlockUI.Header>
-        <ButtonList>
-            <IconButton icon="add" text="Add Script" onClick={addScript} />
-            <IconButton icon="add" text="Add Datasource" onClick={addDatasource} />
-            <IconButton icon="add" text="Add Markdown" onClick={addMarkdown} />
-            <IconButton icon="add" text="Add Visualization" onClick={() => setChosenDimension("1")} />
-        </ButtonList>
+    return <div className="no-print">
+        <BlockUI>
+            <BlockUI.Header>
+                <BlockUI.Title title="Add a Block" />
+            </BlockUI.Header>
+            <ButtonList>
+                <IconButton icon="add" text="Add Script" onClick={addScript} />
+                <IconButton icon="add" text="Add Datasource" onClick={addDatasource} />
+                <IconButton icon="add" text="Add Markdown" onClick={addMarkdown} />
+                <IconButton icon="add" text="Add Visualization" onClick={() => setChosenDimension("1")} />
+            </ButtonList>
 
-        {chosenDimension !== null && <SelectButtonList chosen={chosenDimension} onChose={setChosenDimension as any} options={["1", "2", "3"]} map={it => `${it} dimensional`} /> }
-        {chosenDimension === "1" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={ONE_D_VISUALIZATIONS} />}
-        {chosenDimension === "2" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={TWO_D_VISUALIZATIONS} />}
-        {chosenDimension === "3" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={THREE_D_VISUALIZATIONS} />}
-        
-        {chosenVisualization && <IconButton icon="add" onClick={addVisualize} text="Add" />}
-    </BlockUI>
+            {chosenDimension !== null && <SelectButtonList chosen={chosenDimension} onChose={setChosenDimension as any} options={["1", "2", "3"]} map={it => `${it} dimensional`} /> }
+            {chosenDimension === "1" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={ONE_D_VISUALIZATIONS} />}
+            {chosenDimension === "2" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={TWO_D_VISUALIZATIONS} />}
+            {chosenDimension === "3" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={THREE_D_VISUALIZATIONS} />}
+            
+            {chosenVisualization && <IconButton icon="add" onClick={addVisualize} text="Add" />}
+        </BlockUI>
+    </div>;
 }

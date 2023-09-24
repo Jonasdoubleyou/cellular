@@ -47,3 +47,15 @@
 .block-row > .block {
     flex-grow: 1;
 }
+
+
+@media print {
+    .block {
+        border: thin solid black;
+    }
+
+    .block-connector {
+        color: black;
+        border-left: thin solid black;
+    }
+}
