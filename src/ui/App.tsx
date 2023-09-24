@@ -25,6 +25,7 @@ function App() {
               <IconButton icon="add" text="Add" />
               <IconButton icon="save" />
               <IconButton icon="settings" />
+              <IconButton icon="print" onClick={() => window.print()} />
             </ButtonList>
 
           </div>

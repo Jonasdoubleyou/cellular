@@ -8,7 +8,8 @@ export type IconName =
   | 'cancel'
   | 'save'
   | 'menu'
-  | 'settings';
+  | 'settings'
+  | 'print';
 
 export type IconProps = {
     icon: IconName;
