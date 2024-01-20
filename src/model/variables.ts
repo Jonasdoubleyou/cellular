@@ -1,6 +1,6 @@
 export interface Type {
     base: "any" | "number" | "boolean" | "string" | "array" | "object";
-    instanceOf?: any;
+    instanceOf?: string;
 }
 
 export interface Variable {

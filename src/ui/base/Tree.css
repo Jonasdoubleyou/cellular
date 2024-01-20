@@ -1,0 +1,24 @@
+.tree-node {
+    padding-top: 10px;
+    padding-left: 10px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.tree-node-name {
+    list-style-type: '→';
+}
+
+.tree-node[open] > .tree-node-name {
+    list-style-type: '↓';
+}
+
+.tree-node-title {
+    display: inline;
+    padding-left: 10px;
+}
+
+.tree-node-children {
+    margin-left: 4px;
+    border-left: 2px dotted black;
+}

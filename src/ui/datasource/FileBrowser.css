@@ -1,0 +1,7 @@
+.file {
+    all: unset;
+    display: block;
+    margin-left: 20px;
+    text-decoration: underline;
+    cursor: pointer;
+}

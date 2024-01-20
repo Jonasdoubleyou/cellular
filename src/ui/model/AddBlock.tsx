@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { Block, VisualizeBlock } from "../../model/block";
+import { Block, VisualizeBlock, createBlockID } from "../../model/block";
 import { CellularModel } from "../../model/model";
 import { ModelStore } from "../../runtime/store";
 import { BlockUI } from "../base/Block";
 import { Button, ButtonList, SelectButtonList } from "../base/Button";
 import { Icon, IconButton } from "../base/Icons";
-
-const createBlockID = () => "" + Date.now();
 
 const ONE_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
     "number"
@@ -22,7 +20,7 @@ const TWO_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
 const THREE_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
 ];
 
-export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block) => void }) {
+export function AddBlock({ store, add, chooseFile }: { store: ModelStore, add: (block: Block) => void, chooseFile: () => void }) {
     const [chosenDimension, setChosenDimension] = useState<null | "1" | "2" | "3">(null);
     const [chosenVisualization, setChosenVisualization] = useState<null | string>(null);
 
@@ -51,20 +49,6 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
         });
     }
 
-    function addDatasource() {
-        setChosenVisualization(null);
-        setChosenDimension(null);
-        add({
-            type: "datasource",
-            blockID: createBlockID(),
-            name: "Datasource",
-            path: "",
-            sourcetype: "json",
-            inputs: [],
-            output: []
-        });
-    }
-
     function addVisualize() {
         add({
             type: "visualize",
@@ -86,7 +70,7 @@ export function AddBlock({ store, add }: { store: ModelStore, add: (block: Block
             </BlockUI.Header>
             <ButtonList>
                 <IconButton icon="add" text="Add Script" onClick={addScript} />
-                <IconButton icon="add" text="Add Datasource" onClick={addDatasource} />
+                <IconButton icon="add" text="Add Datasource" onClick={chooseFile} />
                 <IconButton icon="add" text="Add Markdown" onClick={addMarkdown} />
                 <IconButton icon="add" text="Add Visualization" onClick={() => setChosenDimension("1")} />
             </ButtonList>

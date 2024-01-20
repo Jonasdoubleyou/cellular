@@ -18,6 +18,10 @@
     font-size: 15px;
   }
 
+  .icon-button_highlight {
+    background-color: var(--highlight);
+  }
+
   .icon-button-text {
     padding: 0 10px;
   }

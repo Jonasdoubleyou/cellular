@@ -1,5 +1,5 @@
-import { ReactElement, ReactPropTypes, useCallback, useMemo, useState } from "react";
-import { Block, MarkdownBlock, ScriptBlock, VisualizeBlock } from "../../model/block";
+import { ReactElement, ReactPropTypes, useCallback, useEffect, useMemo, useState } from "react";
+import { Block, MarkdownBlock, ScriptBlock, VisualizeBlock, createBlockID } from "../../model/block";
 import { CellularModel } from "../../model/model";
 import { Runtime } from "../../runtime";
 import { BlockUI } from "../base/Block";
@@ -10,13 +10,19 @@ import { VisualizeBlockUI } from "../visualize/VisualizeBlock";
 import { AddBlock } from "./AddBlock";
 import { ModelStore } from "../../runtime/store";
 import { useBlockList } from "../base/store";
+import { DataSourceBlockUI } from "../datasource/DataSource";
+import { ButtonList } from "../base/Button";
+import { IconButton } from "../base/Icons";
+import { Workspace } from "../../runtime/workspace";
+import { FileBrowser } from "../datasource/FileBrowser";
+import { File } from "../../runtime/filestore";
 
 export function getUIForBlock(props: BlockUIProps) {
     (props as any).key = props.blockID;
 
     const block = props.runtime.getBlock(props.blockID);
     if (block.type === "datasource") {
-        return <>TODO</>;      
+        return <DataSourceBlockUI {...props} />;      
     }
 
     if (block.type === "javascript") {
@@ -57,20 +63,62 @@ export function partitionBlocks(blocks: Readonly<Readonly<Block>[]>): Readonly<B
     return partitions;
 }
 
-export function ModelUI({ store }: { store: ModelStore }) {
+
+export function ModelUI({ model, workspace }: { model: CellularModel, workspace: Workspace }) {
+    const store = useMemo(() => new ModelStore(model), [model]);
+    const [showFiles, setShowFiles] = useState(false);
+
+    useEffect(() => {
+        window.document.title = `${model.title} - Cellular`;
+    }, [model]);
+    
+    
     const runtime = useMemo(() => new Runtime(store), [store]);
 
     const blockList = useBlockList(store);
     const partitions = partitionBlocks(blockList);
 
-    return <>
+    function chooseFile(file: File) {
+        runtime.addBlock({
+            blockID: createBlockID(),
+            type: "datasource",
+            path: file.fullPath(),
+            name: file.name,
+            sourcetype: file.sourcetype,
+            inputs: [],
+            output: [{
+                name: file.deriveVariableName(),
+                type: { base: "object", instanceOf: "Table" }
+            }]
+        });
+
+        setShowFiles(false);
+    }
+
+    return <div className="app">
+        {showFiles && <FileBrowser onClose={() => setShowFiles(false)} filestore={workspace.getFiles()} onChoose={chooseFile} />}
+        <div className="app-header">
+            <div className="app-title">
+                CELLULAR <div className="app-title-model">/ {model.title}</div>
+            </div>
+            <div className="app-nav">
+                <ButtonList>
+                <IconButton icon="add" text="Add" />
+                <IconButton icon="save" />
+                <IconButton icon="settings" />
+                <IconButton icon="print" onClick={() => window.print()} />
+                </ButtonList>
+
+            </div>
+            </div>
+            
         {partitions.map(partition => <>
             <BlockUI.Row>
                 {partition.map(block => getUIForBlock({ blockID: block.blockID, runtime }))}
             </BlockUI.Row>
             <BlockUI.Connecter />
         </>)}
-        <AddBlock store={store} add={block => runtime.addBlock(block)} />
-    </>
+        <AddBlock chooseFile={() => setShowFiles(true)} store={store} add={block => runtime.addBlock(block)} />
+    </div>;
 
 }

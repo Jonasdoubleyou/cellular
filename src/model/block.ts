@@ -5,6 +5,7 @@ import { Variable } from "./variables";
 
 // The BlockID is a unique identifier of a Block in a Model
 export type BlockID = string;
+export const createBlockID = () => "" + Date.now();
 
 export interface BlockInput {
     blockID: BlockID;
@@ -29,11 +30,21 @@ export interface MarkdownBlock extends BlockBase {
     content: string;
 }
 
+export type FileName = string;
+export type FilePath = string;
+
+export const sourceTypes = ["csv", "json"] as const;
+export type FileSourceType = typeof sourceTypes[number];
+
+export function isSourceType(type: string): type is FileSourceType {
+    return sourceTypes.includes(type as any);
+}
+
 export interface DataSourceBlock extends BlockBase {
     type: "datasource";
-    sourcetype: "csv" | "json";
-    path: string;
-    name: string;
+    sourcetype: FileSourceType;
+    path: FilePath;
+    name: FileName;
 }
 
 export interface VisualizeBlock extends BlockBase {
