@@ -63,7 +63,7 @@ export class File {
 
     static fromFullPath(fullPath: string): File {
         const lastSlash = fullPath.lastIndexOf("/");
-        const path = fullPath.slice(0, lastSlash);
+        const path = fullPath.slice(0, lastSlash) || "/";
         const [name, sourceType] = fullPath.slice(lastSlash + 1).split(".");
 
         if (!isSourceType(sourceType)) {

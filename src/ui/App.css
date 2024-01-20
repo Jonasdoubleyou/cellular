@@ -16,7 +16,7 @@
 }
 
 body {
-   background: var(--black);
+   background: var(--lightgrey);
    background-image: linear-gradient(90deg, var(--darkgrey) 1rem, transparent 1rem), linear-gradient(var(--darkgrey) 1rem, transparent 1rem);
    background-size: 1.2rem 1.2rem;
 
