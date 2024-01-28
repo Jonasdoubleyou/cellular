@@ -2,6 +2,7 @@ import { parse } from "@babel/parser";
 import { isInside, visit, Visitor } from "./traverse";
 import { ScriptRuntimeBlock } from "../block";
 import { Variable } from "../../model/variables";
+import { provideTypes } from "../../ui/script/code";
 
 export function isGlobalJS(variableName: string) {
     return variableName in window;
@@ -128,6 +129,9 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
         console.log("Assuming Determined Output Variables", outputVariables);
 
         runtimeBlock.setOutputVariables(outputVariables);
+
+
+        provideTypes(runtimeBlock.blockID, outputVariables);
     }
     if (unknownReadVariables.size > 0) {
         const missing = runtimeBlock.runtime.rewireInputs(runtimeBlock, [...unknownReadVariables].map(name => ({ name, type: { base: "any" }})));

@@ -1,4 +1,5 @@
 import { VariableRecord, detectType, isAssignableTo, isSubtype, typeToString } from "../../model/variables";
+import { provideTypes } from "../../ui/script/code";
 import { ScriptRuntimeBlock } from "../block";
 
 interface RunResult {
@@ -39,6 +40,7 @@ export function runScript(script: string, input: VariableRecord, runtimeBlock: S
     const result = fn(context);
     console.log("Running function produced result", result)
 
+    let narrowedTypes = false;
     for (const outputVariable of runtimeBlock.getOutputVariables()) {
         if (!(outputVariable.name in result))
             throw new Error(`Missing output ${outputVariable.name}`);
@@ -57,11 +59,15 @@ export function runScript(script: string, input: VariableRecord, runtimeBlock: S
             });
 
             console.log(`Detected Runtime type ${typeToString(valueType)} for Variable ${outputVariable.name} (replacing ${typeToString(outputVariable.type)})`);
+            narrowedTypes = true;
         }
     }
 
     runtimeBlock.commitUpdates();
 
+    if (narrowedTypes) {
+        provideTypes(runtimeBlock.blockID, runtimeBlock.getOutputVariables());
+    }
     return {
         output: result
     }

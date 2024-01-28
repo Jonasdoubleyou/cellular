@@ -1,9 +1,14 @@
-import { Editor as CodeEditor, loader } from "@monaco-editor/react";
+import { Editor as CodeEditor, Monaco, loader } from "@monaco-editor/react";
 import { editor, Range, Uri } from "monaco-editor/esm/vs/editor/editor.api";
+import { Variable } from "../../model/variables";
 
-loader.init().then(monaco => {
-    // TODO: Autocompletion?
-    monaco.languages.registerCompletionItemProvider({
+let monaco: Monaco | null = null;
+
+(async function setupMonaco() {
+    monaco = await loader.init();
+    console.log("Loaded Monaco", monaco);
+
+    /* monaco.languages.registerCompletionItemProvider({
         language: "javascript"
     }, {
         provideCompletionItems(model, position, context) {
@@ -13,10 +18,39 @@ loader.init().then(monaco => {
         }
     });
 
-    monaco.editor.addEditorAction({ id: 'Test', label: "Test", run: () => {} });
+    monaco.editor.addEditorAction({ id: 'Test', label: "Test", run: () => {} }); */
 
-    const libContent = "declare function test(user: string); ";
-    const libUri = "ts:filename/context.d.ts";
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(libContent, libUri);
-    monaco.editor.createModel(libContent, "typescript", Uri.parse(libUri));
-});
+    const js = monaco.languages.typescript.javascriptDefaults;
+    // Turns on semantic validation for JS
+    js.setDiagnosticsOptions({
+        noSemanticValidation: false,
+        noSyntaxValidation: false
+    });
+    
+    // Typescript Compiler options
+    js.setCompilerOptions({
+        allowJs: true,
+        checkJs: true,
+        allowNonTsExtensions: true,
+        strict: true,
+        noImplicitAny: true,
+    })
+
+    // Load typings for the standard library
+    const libContent = await (await fetch("/library.d.ts")).text();
+    js.addExtraLib(libContent, "ts:library.d.ts");
+})();
+
+export function provideTypes(name: string, variables: readonly Variable[]) {
+    if (monaco) {
+        let declarations = "";
+        for (const { type, name} of variables) {
+            declarations += `declare var ${name}: ${type.base};`;
+        }
+    
+        const js = monaco.languages.typescript.javascriptDefaults;
+        js.addExtraLib(declarations,`ts:${name}.d.ts`);
+
+        console.log(js.getExtraLibs());
+    }
+}
