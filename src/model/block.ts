@@ -51,7 +51,7 @@ export interface VisualizeBlock extends BlockBase {
     type: "visualize";
     name: string;
     dimensions: string[];
-    graphtype: "number" | "table" | "histogram" | "boxplot";
+    graphtype: "number" | "table" | "histogram" | "boxplot" | "json";
 }
 
 export type Block = ScriptBlock | MarkdownBlock | DataSourceBlock | VisualizeBlock;

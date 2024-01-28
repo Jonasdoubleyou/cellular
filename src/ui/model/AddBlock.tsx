@@ -20,8 +20,10 @@ const TWO_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
 const THREE_D_VISUALIZATIONS: VisualizeBlock["graphtype"][] = [
 ];
 
+const OTHER_VISUALIZATIONS: VisualizeBlock["graphtype"][] = ["json"];
+
 export function AddBlock({ store, add, chooseFile }: { store: ModelStore, add: (block: Block) => void, chooseFile: () => void }) {
-    const [chosenDimension, setChosenDimension] = useState<null | "1" | "2" | "3">(null);
+    const [chosenDimension, setChosenDimension] = useState<null | "1" | "2" | "3" | "other">(null);
     const [chosenVisualization, setChosenVisualization] = useState<null | string>(null);
 
     function addScript() {
@@ -75,10 +77,11 @@ export function AddBlock({ store, add, chooseFile }: { store: ModelStore, add: (
                 <IconButton icon="add" text="Add Visualization" onClick={() => setChosenDimension("1")} />
             </ButtonList>
 
-            {chosenDimension !== null && <SelectButtonList chosen={chosenDimension} onChose={setChosenDimension as any} options={["1", "2", "3"]} map={it => `${it} dimensional`} /> }
+            {chosenDimension !== null && <SelectButtonList chosen={chosenDimension} onChose={setChosenDimension as any} options={["1", "2", "3", "other"]} map={it => `${it} dimensional`} /> }
             {chosenDimension === "1" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={ONE_D_VISUALIZATIONS} />}
             {chosenDimension === "2" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={TWO_D_VISUALIZATIONS} />}
             {chosenDimension === "3" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={THREE_D_VISUALIZATIONS} />}
+            {chosenDimension === "other" && <SelectButtonList chosen={chosenVisualization} onChose={setChosenVisualization} options={OTHER_VISUALIZATIONS} />}
             
             {chosenVisualization && <IconButton icon="add" onClick={addVisualize} text="Add" />}
         </BlockUI>
