@@ -1,17 +1,24 @@
+import { library } from "../../library";
 import { VariableRecord, detectType, isAssignableTo, isSubtype, typeToString } from "../../model/variables";
-import { provideTypes } from "../../ui/script/code";
 import { ScriptRuntimeBlock } from "../block";
 
 interface RunResult {
     output: VariableRecord;
 }
 
+// Super hacky way to expose the library inside the script run:
+Object.assign(globalThis, library);
+
 export function runScript(script: string, input: VariableRecord, runtimeBlock: ScriptRuntimeBlock): RunResult {
     let body = "";
 
     body += "/* -------- INPUT ------------ */\n";
-    for (const input of runtimeBlock.getInputVariables()) {
-        body += `const { ${input.name} } = context.input.variables;\n`;
+    for (const { name } of runtimeBlock.getInputVariables()) {
+        if (!(name in input)) {
+            throw new Error(`Missing input ${name}`);
+        }
+
+        body += `const { ${name} } = context.input;\n`;
     }
 
     body += "/* -------- OUTPUT ----------- */\n";
@@ -40,7 +47,6 @@ export function runScript(script: string, input: VariableRecord, runtimeBlock: S
     const result = fn(context);
     console.log("Running function produced result", result)
 
-    let narrowedTypes = false;
     for (const outputVariable of runtimeBlock.getOutputVariables()) {
         if (!(outputVariable.name in result))
             throw new Error(`Missing output ${outputVariable.name}`);
@@ -59,15 +65,11 @@ export function runScript(script: string, input: VariableRecord, runtimeBlock: S
             });
 
             console.log(`Detected Runtime type ${typeToString(valueType)} for Variable ${outputVariable.name} (replacing ${typeToString(outputVariable.type)})`);
-            narrowedTypes = true;
         }
     }
 
     runtimeBlock.commitUpdates();
 
-    if (narrowedTypes) {
-        provideTypes(runtimeBlock.blockID, runtimeBlock.getOutputVariables());
-    }
     return {
         output: result
     }

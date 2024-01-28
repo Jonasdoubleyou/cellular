@@ -2,10 +2,14 @@ import { parse } from "@babel/parser";
 import { isInside, visit, Visitor } from "./traverse";
 import { ScriptRuntimeBlock } from "../block";
 import { Variable } from "../../model/variables";
-import { provideTypes } from "../../ui/script/code";
+import { library } from "../../library";
 
 export function isGlobalJS(variableName: string) {
     return variableName in window;
+}
+
+export function isLibrary(variableName: string) {
+    return variableName in library;
 }
 
 export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) {
@@ -61,6 +65,7 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
                 // a.b.c -> skip b and c, we only care about non members (= globals)
                 if (insideMember.is) return;
                 if (isGlobalJS(node.name)) return;
+                if (isLibrary(node.name)) return;
 
                 if (insideDeclaration.is) {
                     // in: a
@@ -129,9 +134,6 @@ export function analyzeScript(script: string, runtimeBlock: ScriptRuntimeBlock) 
         console.log("Assuming Determined Output Variables", outputVariables);
 
         runtimeBlock.setOutputVariables(outputVariables);
-
-
-        provideTypes(runtimeBlock.blockID, outputVariables);
     }
     if (unknownReadVariables.size > 0) {
         const missing = runtimeBlock.runtime.rewireInputs(runtimeBlock, [...unknownReadVariables].map(name => ({ name, type: { base: "any" }})));

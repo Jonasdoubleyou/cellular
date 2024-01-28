@@ -1,8 +1,11 @@
 import type { Runtime } from ".";
 import { Block, BlockID, BlockInput, DataSourceBlock, ScriptBlock, VisualizeBlock } from "../model/block";
-import { Type, Variable, VariableRecord, isAssignableTo } from "../model/variables";
+import { Type, Variable, VariableRecord, isAssignableTo, isSame } from "../model/variables";
+import { provideTypes } from "../ui/script/code";
 import { analyzeScript } from "./script/analyze";
 import { runScript } from "./script/run";
+import { getFileInfo } from "./datasource";
+import { File } from "./filestore";
 
 export type RunResult = { at: number, variables: VariableRecord | null, errors: Error[] };
 type OnRunHandler = (runResult: RunResult) => void;
@@ -54,6 +57,7 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
             this.lastChangedAt = Date.now();
             this.runtime._updateBlock(this.getBlock(), update);
         } catch(error) {
+            console.log(`Error while updating Block(${this.blockID})`, error);
             const updateResult: RunResult = { at: Date.now(), errors: [error as Error], variables: null };
             this.lastRunResult = updateResult;
 
@@ -76,6 +80,9 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
         for (const input of this.getBlock().inputs) {
             const inputBlock = this.runtime.getRuntimeBlock(input.blockID);
             const inputVariables = (await inputBlock.getOutput()).variables;
+            if (inputVariables == null) {
+                throw new Error(`Could not get Input from Block(${inputBlock.blockID})`);
+            }
             for (const [name, value] of Object.entries(inputVariables)) {
                 if (!input.variables.includes(name)) continue;
 
@@ -131,6 +138,7 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
 
     setOutputVariables(calculatedOutput: Variable[]) {
         this.calculatedOutput = calculatedOutput;
+        provideTypes(this.blockID, this.calculatedOutput);
     }
 
     updateOutputVariable(it: Variable) {
@@ -142,6 +150,7 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
         }
 
         this.calculatedOutput[toUpdate] = it;
+        provideTypes(this.blockID, this.calculatedOutput);
     }
 
     // After a RuntimeBlock was run, we might know some changes to the model (observed at runtime),
@@ -171,6 +180,7 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
 
             console.log(`${this.blockID} - Computed Output`, result);
         } catch (error) {
+            console.log(`Error while computing output of Block(${this.blockID})`, error);
             result.errors.push(error as Error);
         }
 
@@ -221,8 +231,17 @@ class DatasourceRuntimeBlock extends RuntimeBlock<DataSourceBlock> {
     executeUpdate(update: Partial<DataSourceBlock>): Partial<DataSourceBlock> {
         throw new Error("Method not implemented.");
     }
-    async execute(input: VariableRecord): Promise<VariableRecord> {
-        throw new Error("Method not implemented.");
+    async execute(): Promise<VariableRecord> {
+        const { name, sourcetype, path } = this.getBlock();
+        const { data, type } = await getFileInfo(File.fromFullPath(path), this.runtime.workspace.getFiles());
+        
+        if (!isSame(type, this.getOutputVariables()[0].type)) {
+            throw new Error(`Type missmatch between data source type and parsed result of file`);
+        }
+
+        return {
+            [name]: data,
+        };
     }
 }
 

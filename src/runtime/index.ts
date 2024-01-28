@@ -1,14 +1,16 @@
 import { Block, BlockID, BlockInput } from "../model/block";
 import { Variable, isAssignableTo } from "../model/variables";
+import { provideTypes } from "../ui/script/code";
 import { RuntimeBlock } from "./block";
 import { ModelStore, ReadonlyModelStore } from "./store";
+import { Workspace } from "./workspace";
 
 export class Runtime {
     // State Management
 
     runtimeBlocks = new Map<BlockID, RuntimeBlock<Block>>();
     
-    constructor(private modelStore: ModelStore) {
+    constructor(private modelStore: ModelStore, readonly workspace: Workspace) {
         for (const block of modelStore.getBlocks())
             this.addRuntimeBlock(block);
     }
@@ -32,6 +34,10 @@ export class Runtime {
     addBlock(block: Block) {
         this.modelStore.addBlock(block);
         this.addRuntimeBlock(block);
+
+        if (block.output.length > 0) {
+            provideTypes(block.blockID, block.output);
+        }
     }
 
     addRuntimeBlock(block: Block) {
@@ -57,6 +63,9 @@ export class Runtime {
 
     _updateBlock(block: Readonly<Block>, update: Partial<Block>) {
         this.modelStore.updateBlock(block, update);
+        if (update.output) {
+            provideTypes(block.blockID, update.output);
+        }
     }
 
     rewireInputs(runtimeBlock: RuntimeBlock, requiredInputs: Variable[]) {

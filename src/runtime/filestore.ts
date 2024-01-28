@@ -205,12 +205,12 @@ export class FileStore {
         await this.storage.storeFileData(file.fullPath(), data);
     }
 
-    async getFileData(file: File, data: ArrayBuffer) {
+    async getFileData(file: File): Promise<ArrayBuffer> {
         if (!this.hasFile(file)) {
             throw new Error(`Cannot get data for file that does not exist in the store`);
         }
         
-        await this.storage.getFileData(file.fullPath());
+        return await this.storage.getFileData(file.fullPath());
     }
 
     static async from(browserFileStorage: BrowserFileStorage): Promise<FileStore> {

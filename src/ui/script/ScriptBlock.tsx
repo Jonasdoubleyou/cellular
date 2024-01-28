@@ -48,7 +48,8 @@ function RunResultUI({ runResult, rb }: { runResult: RunResult, rb: RuntimeBlock
         </div>
         {runResult.errors.length > 0 && <div className="run-result-errors">
             {runResult.errors.map(it => <div className="run-result-error">
-                {it.name}: {it.message}
+                {it.name}: {it.message}<br/>
+                {it.stack}
             </div>)}
         </div>}    
     </div>

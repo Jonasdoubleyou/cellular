@@ -16,6 +16,7 @@ import { IconButton } from "../base/Icons";
 import { Workspace } from "../../runtime/workspace";
 import { FileBrowser } from "../datasource/FileBrowser";
 import { File } from "../../runtime/filestore";
+import { createDatasource } from "../../runtime/datasource";
 
 export function getUIForBlock(props: BlockUIProps) {
     (props as any).key = props.blockID;
@@ -73,24 +74,13 @@ export function ModelUI({ model, workspace }: { model: CellularModel, workspace:
     }, [model]);
     
     
-    const runtime = useMemo(() => new Runtime(store), [store]);
+    const runtime = useMemo(() => new Runtime(store, workspace), [store, workspace]);
 
     const blockList = useBlockList(store);
     const partitions = partitionBlocks(blockList);
 
     function chooseFile(file: File) {
-        runtime.addBlock({
-            blockID: createBlockID(),
-            type: "datasource",
-            path: file.fullPath(),
-            name: file.name,
-            sourcetype: file.sourcetype,
-            inputs: [],
-            output: [{
-                name: file.deriveVariableName(),
-                type: { base: "object", instanceOf: "Table" }
-            }]
-        });
+        createDatasource(file, workspace).then(it => runtime.addBlock(it));
 
         setShowFiles(false);
     }

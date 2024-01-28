@@ -1,6 +1,6 @@
 import { Editor as CodeEditor, Monaco, loader } from "@monaco-editor/react";
 import { editor, Range, Uri } from "monaco-editor/esm/vs/editor/editor.api";
-import { Variable } from "../../model/variables";
+import { Variable, toTypescript } from "../../model/variables";
 
 let monaco: Monaco | null = null;
 
@@ -45,7 +45,7 @@ export function provideTypes(name: string, variables: readonly Variable[]) {
     if (monaco) {
         let declarations = "";
         for (const { type, name} of variables) {
-            declarations += `declare var ${name}: ${type.base};`;
+            declarations += `declare var ${name}: ${toTypescript(type)};`;
         }
     
         const js = monaco.languages.typescript.javascriptDefaults;
