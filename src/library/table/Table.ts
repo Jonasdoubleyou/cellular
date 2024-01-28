@@ -1,3 +1,4 @@
+import { Type } from "../../model/variables";
 import { Query } from "../query/query";
 import { Column, FilteredColumn } from "./Column";
 
@@ -13,6 +14,12 @@ export class Table<ColTypes> {
         for (const col of columns) {
             this.columnByName.set(col.name, col);
         }
+    }
+
+    cols(): Column[] { return [...this.columnByName.values()]; };
+
+    type(): Type { 
+        return { base: "object", name: "table", namedSubTypes: this.cols().map(it => ({ name: it.name, type: it.type })) };
     }
 
     col<Name extends (keyof ColTypes & string) = any, ColType = ColTypes[Name]>(name: Name): Column<ColType> {

@@ -1,15 +1,21 @@
+import { Type, detectType } from "../../model/variables";
 
 /** Just an immutable array with some utilities on top */
-export interface Column<Type = any> {
+export interface Column<RealType = any> {
+    readonly type: Type;
     readonly name: string;
-    get(index: number): Type | never;
+    get(index: number): RealType | never;
     size(): number;
 }
 
-export class ArrayColumn<Type> implements Column {
-    constructor(readonly name: string, private values: Type[]) {}
+export class ArrayColumn<RealType> implements Column<RealType> {
+    type: Type = { base: "any" };
+    constructor(readonly name: string, private values: RealType[]) {
+        if (values.length > 0)
+            this.type = detectType(values[0]); 
+    }
 
-    get(index: number): Type | never {
+    get(index: number): RealType | never {
         if (index < 0 || index >= this.values.length) {
             throw new Error(`Index out of bounds`);
         }
@@ -20,10 +26,14 @@ export class ArrayColumn<Type> implements Column {
     size() { return this.values.length; }
 }
 
-export class FilteredColumn<Type> implements Column<Type> {
-    constructor(private base: Column<Type>, private rows: number[], readonly name: string = base.name) {}
+export class FilteredColumn<RealType> implements Column<RealType> {
+    type: Type;
+
+    constructor(private base: Column<RealType>, private rows: number[], readonly name: string = base.name) {
+        this.type = base.type;
+    }
     
-    get(index: number): Type {
+    get(index: number): RealType {
         if (index < 0 || index >= this.rows.length) {
             throw new Error(`Index out of bounds`);
         }

@@ -1,6 +1,11 @@
 export interface Type {
+    // The basic shape - either a primitive, an object or an array
     base: "any" | "number" | "boolean" | "string" | "array" | "object";
-    instanceOf?: string;
+    // For a class instance, contains the name of the class, i.e. 'Table'
+    name?: string;
+    // For generic types, either contains their generic arguments
+    namedSubTypes?: { name: string, type: Type }[];
+    subTypes?: Type[];
 }
 
 export interface Variable {
@@ -21,7 +26,16 @@ export const isArray = (t: Type) => t.base === "array";
 export const isObject = (t: Type) => t.base === "object";
 
 export function isSame(a: Type, b: Type) {
-    return a.base === b.base;
+    if (a.base !== b.base) return false;
+    if (a.name !== b.name) return false;
+
+    if (a.namedSubTypes) {
+        if (!b.namedSubTypes) return false;
+        const sameSubTypes = a.namedSubTypes.every(it => b.namedSubTypes!.some(other => it.name === other.name && isSame(it.type, other.type)));
+        if (!sameSubTypes) return false;
+    }
+
+    return true;
 }
 
 export function isAssignableTo(source: Type, target: Type) {
@@ -29,15 +43,38 @@ export function isAssignableTo(source: Type, target: Type) {
 }
 
 export function isSubtype(source: Type, target: Type) {
-    return isAssignableTo(source, target) && source.base !== target.base;
+    return target.base === "any";
 }
 
 // ---------------- Type Utilities --------------
 
 export function typeToString(t: Type) {
-    return t.base;
+    return t.name ?? t.base;
 }
 
+export function toTypescript(t: Type) {
+    if(t.name) {
+        let result = t.name;
+
+        if (t.namedSubTypes) {
+            result += `<{`;
+            for (const { name, type } of t.namedSubTypes!) {
+                result += `${name}: ${toTypescript(type)}, `;
+            }
+            result += `}>`;
+        } else if (t.subTypes) {
+            result += `<`;
+            for (const type of t.subTypes) {
+                result += `${toTypescript(type)}, `;
+            }
+            result += `>`;
+        }
+        
+        return result;
+    }
+
+    return t.base;
+}
 
 
 // ---------------- Type Detection --------------------------
@@ -62,6 +99,17 @@ export function detectType(value: any): Type {
 function detectObjectType(value: object): Type {
     if (Array.isArray(value)) {
         return { base: "array" };
+    }
+
+    // Runtime objects might provide 'runtime types'
+    // i.e. table.type() returns { name: "Table", namedSubTypes: [{ name: "colA", type: { base: "string"} }]}
+    //  then we can infer the type Table<{ colA: string }>
+    if ("type" in value && value.type instanceof Function) {
+        return value.type() as Type;
+    }
+
+    if ("type" in value) {
+        return value.type as Type;
     }
 
     return { base: "object" };

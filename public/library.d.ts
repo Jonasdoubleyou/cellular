@@ -112,13 +112,10 @@ declare module "index" {
     global {
         var ArrayColumn: typeof Columns.ArrayColumn;
         var FilteredColumn: typeof Columns.FilteredColumn;
-        var Table: typeof Tables.Table;
+        const Table: typeof Tables.Table;
+        type Table<T> = Tables.Table<T>;
         var eq: typeof Predicates.eq;
         var and: typeof Predicates.and;
         var or: typeof Predicates.or;
-        var test: Tables.Table<{
-            a: string;
-            b: number;
-        }>;
     }
 }
