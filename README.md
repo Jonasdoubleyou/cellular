@@ -42,17 +42,19 @@ Quickly import data, massage it with JavaScript and visualize it. Like R Studio,
 - Global Variables are automatically detected as Output and are available to following blocks
 - Variables used to read output from previous blocks are automatically detected and are wired in the Cellular Model
 - Scripts can be run, rerunning them will invalidate Blocks building on it
-- TODO: Typing for input types
-- TODO: Typing for library
+- The library can be used in scripts and Typescript types are available for it
+- Types are inferred for input variables
 
 **Script Library**
-- TODO: Table to represent a two-dimensional grid with columns and rows
-- TODO: Small Query Language to work with Tables
+- Table to represent a two-dimensional grid with columns and rows
+- Small Query Language to work with Tables
   - TODO: Projection
-  - TODO: Filter
+  - Filter
   - TODO: Join
 
 **Visualization**
+- Show JSON as a tree
+- TODO: Text
 - TODO: Simple Graphs
 
 ## Building and Running

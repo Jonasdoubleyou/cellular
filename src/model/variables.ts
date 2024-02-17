@@ -52,7 +52,7 @@ export function typeToString(t: Type) {
     return t.name ?? t.base;
 }
 
-export function toTypescript(t: Type) {
+export function toTypescript(t: Type): string {
     if(t.name) {
         let result = t.name;
 
@@ -73,6 +73,20 @@ export function toTypescript(t: Type) {
         return result;
     }
 
+    if (t.base === "object" && t.namedSubTypes && t.namedSubTypes.length > 0) {
+        let result = `{`;
+
+        for (const sub of t.namedSubTypes)
+            result += `${sub.name}: ${toTypescript(sub.type)}, `;
+        
+        result += `}`;
+        return result;
+    }
+
+    if (t.base === "array" && t.namedSubTypes && t.namedSubTypes.length === 1) {
+        return `${toTypescript(t.namedSubTypes![0].type)}[]`;
+    }
+
     return t.base;
 }
 
@@ -80,7 +94,9 @@ export function toTypescript(t: Type) {
 // ---------------- Type Detection --------------------------
 // Infers Cellular Types from JavaScript types
 
-export function detectType(value: any): Type {
+const MAX_DEPTH = 5;
+
+export function detectType(value: any, depth = 0): Type {
     switch (typeof value) {
         case "number":
         case "bigint":
@@ -90,15 +106,17 @@ export function detectType(value: any): Type {
         case "boolean":
             return { base: "boolean" };
         case "object":
-            return detectObjectType(value);
+            return detectObjectType(value, depth);
         default:
             return { base: "any" };
     }
 }
 
-function detectObjectType(value: object): Type {
+const MAX_KEYS = 100;
+
+function detectObjectType(value: object, depth = 0): Type {
     if (Array.isArray(value)) {
-        return { base: "array" };
+        return detectArrayType(value, depth);
     }
 
     // Runtime objects might provide 'runtime types'
@@ -112,5 +130,27 @@ function detectObjectType(value: object): Type {
         return value.type as Type;
     }
 
+    const entries = Object.entries(value);
+    if (entries.length < MAX_KEYS && depth < MAX_DEPTH) {
+        const result: Type = { base: "object", namedSubTypes: [] };
+        for (const [k, v] of entries) {
+            result.namedSubTypes!.push({
+                type: detectType(v, depth + 1),
+                name: k
+            });
+        }
+
+        return result;
+    }
+
     return { base: "object" };
+}
+
+function detectArrayType(value: any[], depth = 0): Type {
+    if (value.length > 0 && depth < MAX_DEPTH) {
+        const type = detectType(value[0], depth + 1);
+        return { base: "array", namedSubTypes: [{ name: "", type }]};
+    }
+
+    return { base: "array" };
 }

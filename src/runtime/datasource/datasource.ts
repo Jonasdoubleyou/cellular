@@ -1,28 +1,13 @@
-import { DataSourceBlock, createBlockID } from "../model/block";
-import { Type, Variable, detectType } from "../model/variables";
-import { File, FileStore } from "./filestore";
-import { Workspace } from "./workspace";
+import { DataSourceBlock, createBlockID } from "../../model/block";
+import { Type, Variable, detectType } from "../../model/variables";
+import { File, FileStore } from "../filestore";
+import { Workspace } from "../workspace";
+import { parseCSV } from "./csv";
+import { parseJSON } from "./json";
 
-interface FileInfo {
+export interface FileInfo {
     data: any;
     type: Type;
-}
-
-function parseCSV(fileContent: ArrayBuffer): FileInfo {
-    return {
-        type: { base: "any" },
-        data: "TODO"
-    }
-}
-
-function parseJSON(fileContent: ArrayBuffer): FileInfo {
-    const data = JSON.parse(new TextDecoder().decode(fileContent));
-
-    // TODO: Rewrite to Table if array of objects
-    return {
-        type: detectType(data),
-        data
-    }
 }
 
 const parsedFileCache = new Map<string, FileInfo>();

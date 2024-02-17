@@ -16,7 +16,7 @@ import { IconButton } from "../base/Icons";
 import { Workspace } from "../../runtime/workspace";
 import { FileBrowser } from "../datasource/FileBrowser";
 import { File } from "../../runtime/filestore";
-import { createDatasource } from "../../runtime/datasource";
+import { createDatasource } from "../../runtime/datasource/datasource";
 
 export function getUIForBlock(props: BlockUIProps) {
     (props as any).key = props.blockID;

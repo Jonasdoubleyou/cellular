@@ -4,7 +4,7 @@ import { Type, Variable, VariableRecord, isAssignableTo, isSame } from "../model
 import { provideTypes } from "../ui/script/code";
 import { analyzeScript } from "./script/analyze";
 import { runScript } from "./script/run";
-import { getFileInfo } from "./datasource";
+import { getFileInfo } from "./datasource/datasource";
 import { File } from "./filestore";
 
 export type RunResult = { at: number, variables: VariableRecord | null, errors: Error[] };
