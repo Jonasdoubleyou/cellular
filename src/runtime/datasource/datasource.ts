@@ -8,6 +8,7 @@ import { parseJSON } from "./json";
 export interface FileInfo {
     data: any;
     type: Type;
+    summary: string;
 }
 
 const parsedFileCache = new Map<string, FileInfo>();
@@ -51,5 +52,6 @@ export async function createDatasource(file: File, workspace: Workspace): Promis
         path: file.fullPath(),
         output: [outVar],
         sourcetype: file.sourcetype,
+        summary: fileInfo.summary
     }
 }

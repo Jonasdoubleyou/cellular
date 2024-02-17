@@ -45,6 +45,7 @@ export interface DataSourceBlock extends BlockBase {
     sourcetype: FileSourceType;
     path: FilePath;
     name: FileName;
+    summary?: string;
 }
 
 export interface VisualizeBlock extends BlockBase {

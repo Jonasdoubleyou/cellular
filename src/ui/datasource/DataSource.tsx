@@ -11,6 +11,7 @@ export function DataSourceBlockUI({ blockID, runtime }: BlockUIProps) {
 
     return <BlockUI>
         <h1><Icon icon="save" /> {block.path}</h1>
+        {block.summary}
         <ButtonList right>
             <IconButton small icon="cancel" onClick={() => runtime.removeBlock(block)} />
         </ButtonList>

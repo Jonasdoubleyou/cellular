@@ -9,17 +9,20 @@ import { Column, FilteredColumn } from "./Column";
 
 export class Table<ColTypes> {
     private columnByName = new Map<string, Column>();
+    readonly size: number;
 
     constructor(columns: Column[]) {
         for (const col of columns) {
             this.columnByName.set(col.name, col);
         }
+
+        this.size = columns.length > 0 ? columns[0].size() : 0;
     }
 
     cols(): Column[] { return [...this.columnByName.values()]; };
 
     type(): Type { 
-        return { base: "object", name: "table", namedSubTypes: this.cols().map(it => ({ name: it.name, type: it.type })) };
+        return { base: "object", name: "Table", namedSubTypes: this.cols().map(it => ({ name: it.name, type: it.type })) };
     }
 
     col<Name extends (keyof ColTypes & string) = any, ColType = ColTypes[Name]>(name: Name): Column<ColType> {

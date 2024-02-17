@@ -7,5 +7,5 @@ export function parseJSON(fileContent: ArrayBuffer): FileInfo {
     console.log("JSON detectObjectType", data, type, toTypescript(type));
 
     // TODO: Rewrite to Table if array of objects
-    return { type, data };
+    return { type, data, summary: "JSON" };
 }
