@@ -2,6 +2,8 @@
 
 Quickly import data, massage it with JavaScript and visualize it. Like R Studio, just without R.
 
+![A cellular model that visualizes new songs](./doc/example_model.png)
+
 ## Quick Start
 
 1. Create a new _model_ ("storybook") in a _workspace_ of your choice (workspaces can be used to separate files and models of different projects)

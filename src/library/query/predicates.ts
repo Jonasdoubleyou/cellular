@@ -29,3 +29,10 @@ export const eq = <Fields, AField extends (keyof Fields) & Field, AValue extends
 
 export type Predicate<Fields> = And<Fields> | Or<Fields> | Eq<Fields>;
 
+export interface SortPredicate<Fields> {
+    field: Field;
+    sort: "asc" | "desc";
+}
+
+export const asc = <Fields, AField extends (keyof Fields) & Field>(field: AField): SortPredicate<Fields> => ({ field, sort: "asc" });
+export const desc = <Fields, AField extends (keyof Fields) & Field>(field: AField): SortPredicate<Fields> => ({ field, sort: "desc" });

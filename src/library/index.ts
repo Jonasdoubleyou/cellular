@@ -16,4 +16,7 @@ declare global {
     var eq: typeof Predicates.eq;
     var and: typeof Predicates.and;
     var or: typeof Predicates.or;
+
+    var asc: typeof Predicates.asc;
+    var desc: typeof Predicates.desc;
 }

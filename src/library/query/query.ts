@@ -1,6 +1,6 @@
 import { Table } from "../table/Table";
 import { QueryExecutor } from "./executor";
-import { Predicate, and, eq } from "./predicates";
+import { Predicate, SortPredicate, and, eq } from "./predicates";
 
 interface TableOp {
     type: "table";
@@ -20,7 +20,12 @@ interface JoinOp {
     type: "join";
 }
 
-type Op = TableOp | FilterOp | ProjectOp | JoinOp;
+interface SortOp {
+    type: "sort";
+    order: SortPredicate<any>[];
+}
+
+type Op = TableOp | FilterOp | ProjectOp | JoinOp | SortOp;
 
 export class Query<Fields> {
     private constructor(readonly ops: Op[]) {}
@@ -37,6 +42,13 @@ export class Query<Fields> {
             ...this.ops,
             { type: "filter", predicate }
         ])
+    }
+
+    sort(...order: SortPredicate<Fields>[]): Query<Fields> {
+        return new Query<Fields>([
+            ...this.ops,
+            { type: "sort", order }
+        ]);
     }
 
     run(): Table<Fields> {

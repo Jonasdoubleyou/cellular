@@ -1,6 +1,6 @@
 import { Column } from "../table/Column";
 import { Table } from "../table/Table";
-import { Predicate } from "./predicates";
+import { Predicate, SortPredicate } from "./predicates";
 import { Query } from "./query";
 
 // From sorted values, produces an intersection (also sorted)
@@ -74,7 +74,31 @@ function filter(table: Table<any>, predicate: Predicate<any>): Table<any> {
         }
     }
 
-    return table.filter(apply(predicate));
+    return table.filterByRows(apply(predicate));
+}
+
+function sort(table: Table<any>, order: SortPredicate<any>[]): Table<any> {
+    const indices = Array.from({ length: table.size }, (_, i) => i);
+    const sorters = order.map(({ field, sort }) => {
+        const factor = sort === "asc" ? 1 : -1;
+        const col = table.col(field);
+        
+        if (col.type.base === "number") {
+            return (idxA: number, idxB: number) => (col.get(idxA) - col.get(idxB)) * factor;
+        }
+
+        return (idxA: number, idxB: number) => (col.get(idxA).toString().localeCompare(col.get(idxB).toString())) * factor;
+    });
+    indices.sort((idxA, idxB) => {
+        for (const sort of sorters) {
+            const result = sort(idxA, idxB);
+            if (result !== 0) return result;
+        }
+
+        return 0;
+    })
+
+    return table.filterByRows(indices);
 }
 
 export class QueryExecutor {
@@ -83,6 +107,7 @@ export class QueryExecutor {
     constructor(private query: Query<any>) {}
 
     run() {
+        const startTime = performance.now();
         for (const op of this.query.ops) {
             switch(op.type) {
                 case "table":
@@ -101,8 +126,14 @@ export class QueryExecutor {
                 case "projection":
                     // TODO
                     break;
+
+                case "sort":
+                    this.tables[0] = sort(this.tables[0], op.order);
+                    break;
             }
         }
+        const duration = performance.now() - startTime;
+        console.log(`Evaluated query in ${duration.toFixed(3)}ms`, this.query);
     }
 
     get() {

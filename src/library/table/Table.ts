@@ -33,7 +33,7 @@ export class Table<ColTypes> {
 
     query(): Query<ColTypes> { return Query.from(this); }
 
-    filter(rows: number[]): Table<ColTypes> {
+    filterByRows(rows: number[]): Table<ColTypes> {
         return new Table(
             [...this.columnByName.values()]
             .map(it => new FilteredColumn(it, rows))
