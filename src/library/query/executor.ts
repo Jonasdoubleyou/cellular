@@ -81,17 +81,12 @@ function sort(table: Table<any>, order: SortPredicate<any>[]): Table<any> {
     const indices = Array.from({ length: table.size }, (_, i) => i);
     const sorters = order.map(({ field, sort }) => {
         const factor = sort === "asc" ? 1 : -1;
-        const col = table.col(field);
-        
-        if (col.type.base === "number") {
-            return (idxA: number, idxB: number) => (col.get(idxA) - col.get(idxB)) * factor;
-        }
-
-        return (idxA: number, idxB: number) => (col.get(idxA).toString().localeCompare(col.get(idxB).toString())) * factor;
+        const sorter = table.col(field).sorter();
+        return { sorter, factor };
     });
     indices.sort((idxA, idxB) => {
-        for (const sort of sorters) {
-            const result = sort(idxA, idxB);
+        for (const { sorter, factor } of sorters) {
+            const result = sorter(idxA, idxB) * factor;
             if (result !== 0) return result;
         }
 

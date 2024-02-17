@@ -1,10 +1,35 @@
+// Describes Types of Values passed around in Cellular Models
+// As Cellular mainly runs JavaScript, it's typesystem is rooted in in JS
+// Also as JavaScript is dynamically typed, the type system is also very flexible
+//
+// Usually types are automatically inferred from runtime values - and values
+// can provide a custom inference by providing a type(): Type method.
+//
+// To provide typing within the Script editor, Typescript declarations can be generated
+// for Types 
 export interface Type {
     // The basic shape - either a primitive, an object or an array
+    // Equivalent to JavaScript's typeof
+    // Anything can be assigned to values of type "any"
     base: "any" | "number" | "boolean" | "string" | "array" | "object";
-    // For a class instance, contains the name of the class, i.e. 'Table'
+
+    // For a objects, contains the name of the class, i.e. 'Table'
+    // Objects with a name are called instances
     name?: string;
-    // For generic types, either contains their generic arguments
+
+    // For instances, describes the generic parameter as an object
+    // Equivalent to Typescript's generic (type.name)<{ (name): (type), ... }>
+    //
+    // For arrays, the only named sub type describes the type of all array elements
+    // (to distinguish from tuples that would use "subTypes")
+    //
+    // For other objects, describes the properties of the object
     namedSubTypes?: { name: string, type: Type }[];
+
+    // For instances, descibes a list of generic parameters
+    // Equivalent to Typescript's (type.name)<subTypes...>
+    //
+    // For arrays, the n'th subType describes the type of the n'th array element (a tuple)
     subTypes?: Type[];
 }
 
@@ -13,6 +38,7 @@ export interface Variable {
     type: Type;
 }
 
+// Runtime representation of a Set of Variables
 export type VariableRecord =  {
     [name: string]: any;
 };
@@ -31,27 +57,40 @@ export function isSame(a: Type, b: Type) {
 
     if (a.namedSubTypes) {
         if (!b.namedSubTypes) return false;
+        // TODO: Make independent of argument order
         const sameSubTypes = a.namedSubTypes.every(it => b.namedSubTypes!.some(other => it.name === other.name && isSame(it.type, other.type)));
         if (!sameSubTypes) return false;
+    }
+
+    if (a.subTypes) {
+        if (!b.subTypes || a.subTypes.length !== b.subTypes.length) return false;
+        if (!a.subTypes.every((it, i) => isSame(it, b.subTypes![i]))) return false;
     }
 
     return true;
 }
 
 export function isAssignableTo(source: Type, target: Type) {
-    return target.base === "any" || isSame(source, target);
+    return isSubtype(source, target);
 }
 
 export function isSubtype(source: Type, target: Type) {
-    return target.base === "any";
+    if (target.base === "any") return true;
+    
+    // TODO: instance as subtype of object, generic as subtype of instance
+    if (source.base === target.base && source.name === target.name) return true;
+    
+    return false;
 }
 
 // ---------------- Type Utilities --------------
 
+// Short summary of a type to display in the UI
 export function typeToString(t: Type) {
     return t.name ?? t.base;
 }
 
+// Render type to a string of Typescript
 export function toTypescript(t: Type): string {
     if(t.name) {
         let result = t.name;
@@ -93,7 +132,10 @@ export function toTypescript(t: Type): string {
 
 // ---------------- Type Detection --------------------------
 // Infers Cellular Types from JavaScript types
+// This is always a "best effort" as it is sometimes hard to generalize
+// i.e. tuples vs. array of supertype of all elements
 
+// As objects can be arbitrarily nested, we only infer types to a certain depth
 const MAX_DEPTH = 5;
 
 export function detectType(value: any, depth = 0): Type {

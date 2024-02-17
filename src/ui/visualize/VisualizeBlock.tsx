@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { VisualizeBlock } from "../../model/block";
 import { BlockUI } from "../base/Block";
 import { ButtonList } from "../base/Button";
@@ -12,17 +12,25 @@ import ReactJson from '@microlink/react-json-view'
 import { TableUI } from "./Table";
 
 import "./VisualizeBlock.css"
+import { Column, ExpressionColumn } from "../../library/table/Column";
+import { BoxplotUI } from "./Boxplot";
 
+// Maps Block graphtypes to React implementations
 const visualForType: { [type in VisualizeBlock["graphtype"]]: React.FC<BlockUIProps> } = {
-    boxplot: () => <>TODO</>,
+    boxplot: WithNumericColumn(BoxplotUI),
     histogram: () => <>TODO</>,
-    number: VisualizeNumber,
-    table: VisualizeTable,
-    json: VisualizeJson
+    number: WithNumber(NumberUI),
+    table: WithTable(TableUI),
+    json: WithAny(JsonUI)
 };
 
-const possibleTypes: { [type in VisualizeBlock["graphtype"]]?: Type } = {
-    number: { base: "number" }
+// Restricts selectable inputs for graphtypes
+const possibleTypes: { [type in VisualizeBlock["graphtype"]]: Type } = {
+    number: { base: "number" },
+    table: { base: "object", name: "Table" },
+    json: { base: "any" },
+    boxplot: { base: "object", name: "Table" },
+    histogram: { base: "object", name: "Table" }
 };
 
 export function VisualizeBlockUI({ blockID, runtime }: BlockUIProps) {
@@ -55,24 +63,23 @@ export function VisualizeBlockUI({ blockID, runtime }: BlockUIProps) {
     </BlockUI>;
 }
 
-
-
-
 function VisualizeBlockTitle({ blockID, runtime }: BlockUIProps) {
     const block = useBlock<VisualizeBlock>(runtime.getStore(), blockID);
 
     return <Editable text={block.name} onFinish={title => runtime.updateBlock(block, { title })} />
 }
 
-function VisualizeNumber({ blockID, runtime }: BlockUIProps) {    
-    const input = useInput(blockID, runtime);
-    const value = useMemo(() => input ? getNumber(input) : null, [input]);
+// ---------- Data Accessors -------------------
+// Convenience wrappers to render components with specific inputs
+// and gracefully render nothing otherwise
 
-    return <div className="visualize-number">
-        <div className="visualize-number-value">
-            {value ?? "?"}
-        </div>
-    </div>;
+function WithNumber(Component: (props: { value: number }) => React.ReactElement) {
+    return function Wrapped({ blockID, runtime }: BlockUIProps) {    
+        const input = useInput(blockID, runtime);
+        const value = useMemo(() => input ? getNumber(input) : null, [input]);
+
+        return <Component value={value as number} />;
+    }
 }
 
 function getNumber(input: VariableRecord) {
@@ -80,16 +87,17 @@ function getNumber(input: VariableRecord) {
     if (keys.length !== 1) return null;
 
     const value = input[ keys[0] ];
-    if(detectType(value).base !== "number") return null;
+    if(typeof value !== "number") return null;
 
-    return (value as number).toFixed(2);
+    return (value as number);
 }
 
-function VisualizeJson({ blockID, runtime }: BlockUIProps) {
-    const input = useInput(blockID, runtime);
-    const value = useMemo(() => input ? getAny(input) : null, [input]);
-    console.log("VisualizeJson", value);
-    return <ReactJson src={value} collapsed={2}  />;
+function WithAny(Component: (props: { value: any }) => React.ReactElement) {
+    return function Wrapped({ blockID, runtime }: BlockUIProps) {
+        const input = useInput(blockID, runtime);
+        const value = useMemo(() => input ? getAny(input) : null, [input]);
+        return <Component value={value} />
+    }
 }
 
 function getAny(input: VariableRecord) {
@@ -100,12 +108,55 @@ function getAny(input: VariableRecord) {
     return value;
 }
 
-function VisualizeTable({ blockID, runtime }: BlockUIProps) {
-    const input = useInput(blockID, runtime);
-    const value = useMemo(() => input ? getAny(input) : null, [input]);
+function WithTable(Component: (props: { table: Table<any> }) => React.ReactElement) {
+    return function Wrapped({ blockID, runtime }: BlockUIProps) {
+        const input = useInput(blockID, runtime);
+        const value = useMemo(() => input ? getAny(input) : null, [input]);
     
-    if (!value) return null;
-    if (!(value instanceof Table)) return null;
+        if (!value) return null;
+        if (!(value instanceof Table)) return null;
 
-    return <TableUI table={value as Table<any>} />;
+        return <Component table={value as Table<any>} />;
+    }
+}
+
+function WithNumericColumn(Component: (props: { column: Column<number> }) => React.ReactElement | null) {
+    return function Wrapped({ blockID, runtime }: BlockUIProps) {
+    
+        const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
+        const input = useInput(blockID, runtime);
+        const table = useMemo(() => input ? getAny(input) : null, [input]);
+        const column = useMemo(() => {
+            if (!table || !selectedColumn) return null;
+            if (!(table instanceof Table)) return null;
+    
+            let col = table.col(selectedColumn);
+            if (col.type.base !== "number") {
+                col = new ExpressionColumn(col, "parseFloat", { base: "number" }, (value) => parseFloat(value));
+            }
+
+            return col;
+        }, [table, selectedColumn]);
+
+        if (!table || !(table instanceof Table)) return <>Missing table input</>;
+    
+        return <div>
+            {table && <Select options={table.cols().map(it => it.name)} onChange={setSelectedColumn} />}
+            {column && <Component column={column} />}
+        </div>;
+    }
+}
+
+// ---------- Trivial visualizations ----------
+
+function NumberUI({ value }: { value: number }) {
+    return <div className="visualize-number">
+        <div className="visualize-number-value">
+            {value ?? "?"}
+        </div>
+    </div>;
+}
+
+function JsonUI({ value }: { value: any }) {
+    return <ReactJson src={value} collapsed={2}  />;
 }

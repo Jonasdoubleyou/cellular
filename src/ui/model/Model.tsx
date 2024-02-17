@@ -53,6 +53,10 @@ export function partitionBlocks(blocks: Readonly<Readonly<Block>[]>): Readonly<B
         if (block.type === "datasource" && lastBlock()?.type === "datasource") {
             // Group consecutive datasources together
             currentPartition().push(block);
+        } else if (block.type === "visualize" && lastBlock()?.type === "visualize") {
+            // Group consecutive visualizations together
+            // TODO: Probably need to wrap larger visuals
+            currentPartition().push(block);
         } else if (block.type === "markdown" && currentPartition().length === 1 && ["javascript", "visualize"].includes(lastBlock()!.type)) {
             // Push Markdown to the right of previous blocks
             currentPartition().push(block);
