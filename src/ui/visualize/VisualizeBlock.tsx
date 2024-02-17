@@ -9,6 +9,7 @@ import { BlockUIProps, useInput, useRuntimeBlock } from "../base/types";
 import { Select } from "../base/Select";
 import { Type, VariableRecord, detectType } from "../../model/variables";
 import ReactJson from '@microlink/react-json-view'
+import { TableUI } from "./Table";
 
 import "./VisualizeBlock.css"
 
@@ -16,7 +17,7 @@ const visualForType: { [type in VisualizeBlock["graphtype"]]: React.FC<BlockUIPr
     boxplot: () => <>TODO</>,
     histogram: () => <>TODO</>,
     number: VisualizeNumber,
-    table: () => <>TODO</>,
+    table: VisualizeTable,
     json: VisualizeJson
 };
 
@@ -53,6 +54,8 @@ export function VisualizeBlockUI({ blockID, runtime }: BlockUIProps) {
         {hasInput && <Visual blockID={blockID} runtime={runtime} />}
     </BlockUI>;
 }
+
+
 
 
 function VisualizeBlockTitle({ blockID, runtime }: BlockUIProps) {
@@ -95,4 +98,14 @@ function getAny(input: VariableRecord) {
 
     const value = input[ keys[0] ];
     return value;
+}
+
+function VisualizeTable({ blockID, runtime }: BlockUIProps) {
+    const input = useInput(blockID, runtime);
+    const value = useMemo(() => input ? getAny(input) : null, [input]);
+    
+    if (!value) return null;
+    if (!(value instanceof Table)) return null;
+
+    return <TableUI table={value as Table<any>} />;
 }
