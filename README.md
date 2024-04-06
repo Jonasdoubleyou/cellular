@@ -4,6 +4,8 @@ Quickly import data, massage it with JavaScript and visualize it. Like R Studio,
 
 ![A cellular model that visualizes new songs](./doc/example_model.png)
 
+(This is currently rather in a proof of concept stage, expect bugs and missing features)
+
 ## Quick Start
 
 1. Create a new _model_ ("storybook") in a _workspace_ of your choice (workspaces can be used to separate files and models of different projects)
@@ -33,7 +35,7 @@ Quickly import data, massage it with JavaScript and visualize it. Like R Studio,
 **Data Sources**
 - Upload Files into a Workspace (also via Drag and Drop)
 - TODO: JSON Files are automatically parsed and exposed as _Tables_
-- TODO: CSV Files are automatically parsed and exposed as _Tables_
+- CSV Files are automatically parsed and exposed as _Tables_
 - TODO: TXT Files are available as strings, other files as ArrayBuffer
 - TODO: Data Preview for Strings
 - TODO: Data Preview for Tables
@@ -49,10 +51,19 @@ Quickly import data, massage it with JavaScript and visualize it. Like R Studio,
 
 **Script Library**
 - Table to represent a two-dimensional grid with columns and rows
-- Small Query Language to work with Tables
+- Small Query Language to work with Tables (`.query().<ops ...>().run()`)
   - TODO: Projection
-  - Filter
+  - Filter (`.filter(<predicate>)`)
+  - Sort (`.sort(<order, ...>)`)
   - TODO: Join
+
+Predicates:
+  - `eq("<column name>", <column value>)`
+  - `and(<predicate, ...>)`, `or(<predicate, ...>)`
+
+Ordering:
+  - `asc("<column name>")`
+  - `desc("<column name>")`
 
 **Visualization**
 - Show JSON as a tree
