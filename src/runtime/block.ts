@@ -70,7 +70,7 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
     protected abstract executeUpdate(update: Partial<BlockType>): Partial<BlockType>;
 
     hasValidResult() {
-        return this.lastRunResult && (!this.lastChangedAt || this.lastChangedAt < this.lastRunResult.at);
+        return this.lastRunResult && (!this.lastChangedAt || this.lastChangedAt <= this.lastRunResult.at);
     }
 
     async getInput(): Promise<VariableRecord> {
@@ -174,7 +174,11 @@ export abstract class RuntimeBlock<BlockType extends Block = Block> {
 
         const result: RunResult = { at: Date.now(), variables: null, errors: [] };
         try {
+            console.log(`${this.blockID} - Computing Input`);
+
             const input = await this.getInput();
+            console.log(`${this.blockID} - Computed Input`);
+
             result.variables = await this.execute(input);
             this.lastRunResult = result;
 
