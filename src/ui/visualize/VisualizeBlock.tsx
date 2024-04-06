@@ -14,11 +14,12 @@ import { TableUI } from "./Table";
 import "./VisualizeBlock.css"
 import { Column, ExpressionColumn } from "../../library/table/Column";
 import { BoxplotUI } from "./Boxplot";
+import { HistogrammUI } from "./Histogramm";
 
 // Maps Block graphtypes to React implementations
 const visualForType: { [type in VisualizeBlock["graphtype"]]: React.FC<BlockUIProps> } = {
     boxplot: WithNumericColumn(BoxplotUI),
-    histogram: () => <>TODO</>,
+    histogram: WithColumn(({ column: x, ...props }) => WithNumericColumn(({ column: y }) => HistogrammUI({ x, y}))(props)),
     number: WithNumber(NumberUI),
     table: WithTable(TableUI),
     json: WithAny(JsonUI)
@@ -73,12 +74,14 @@ function VisualizeBlockTitle({ blockID, runtime }: BlockUIProps) {
 // Convenience wrappers to render components with specific inputs
 // and gracefully render nothing otherwise
 
-function WithNumber(Component: (props: { value: number }) => React.ReactElement) {
-    return function Wrapped({ blockID, runtime }: BlockUIProps) {    
-        const input = useInput(blockID, runtime);
+type Component<Props> = (props: (Props & BlockUIProps)) => React.ReactElement | null;
+
+function WithNumber<Props extends { value: number }>(Component: Component<Props>) {
+    return function Wrapped(props: BlockUIProps & Omit<Props, "value">) {    
+        const input = useInput(props.blockID, props.runtime);
         const value = useMemo(() => input ? getNumber(input) : null, [input]);
 
-        return <Component value={value as number} />;
+        return <Component value={value as number} {...props as any} />;
     }
 }
 
@@ -92,11 +95,11 @@ function getNumber(input: VariableRecord) {
     return (value as number);
 }
 
-function WithAny(Component: (props: { value: any }) => React.ReactElement) {
-    return function Wrapped({ blockID, runtime }: BlockUIProps) {
-        const input = useInput(blockID, runtime);
+function WithAny<Props extends { value: any }>(Component: Component<Props>) {
+    return function Wrapped(props: Omit<Props, 'value'> & BlockUIProps) {
+        const input = useInput(props.blockID, props.runtime);
         const value = useMemo(() => input ? getAny(input) : null, [input]);
-        return <Component value={value} />
+        return <Component value={value} {...props as any} />
     }
 }
 
@@ -108,23 +111,47 @@ function getAny(input: VariableRecord) {
     return value;
 }
 
-function WithTable(Component: (props: { table: Table<any> }) => React.ReactElement) {
-    return function Wrapped({ blockID, runtime }: BlockUIProps) {
-        const input = useInput(blockID, runtime);
+function WithTable<Props extends { table: Table<any> }>(Component: Component<Props>) {
+    return function Wrapped(props: Omit<Props, 'table'> & BlockUIProps) {
+        const input = useInput(props.blockID, props.runtime);
         const value = useMemo(() => input ? getAny(input) : null, [input]);
     
         if (!value) return null;
         if (!(value instanceof Table)) return null;
 
-        return <Component table={value as Table<any>} />;
+        return <Component table={value as Table<any>} {...props as any} />;
     }
 }
 
-function WithNumericColumn(Component: (props: { column: Column<number> }) => React.ReactElement | null) {
-    return function Wrapped({ blockID, runtime }: BlockUIProps) {
+function WithColumn<Props extends { column: Column<any> }>(Component: Component<Props>) {
+    return function Wrapped(props: Omit<Props, 'column'> & BlockUIProps) {
     
         const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
-        const input = useInput(blockID, runtime);
+        const input = useInput(props.blockID, props.runtime);
+        const table = useMemo(() => input ? getAny(input) : null, [input]);
+        const column = useMemo(() => {
+            if (!table || !selectedColumn) return null;
+            if (!(table instanceof Table)) return null;
+    
+            let col = table.col(selectedColumn);
+
+            return col;
+        }, [table, selectedColumn]);
+
+        if (!table || !(table instanceof Table)) return <>Missing table input</>;
+    
+        return <div>
+            {table && <Select options={table.cols().map(it => it.name)} onChange={setSelectedColumn} />}
+            {column && <Component column={column} {...props as any} />}
+        </div>;
+    }
+}
+
+function WithNumericColumn<Props extends { column: Column<number> }>(Component: Component<Props>) {
+    return function Wrapped(props: Omit<Props, 'column'> & BlockUIProps) {
+    
+        const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
+        const input = useInput(props.blockID, props.runtime);
         const table = useMemo(() => input ? getAny(input) : null, [input]);
         const column = useMemo(() => {
             if (!table || !selectedColumn) return null;
@@ -142,7 +169,7 @@ function WithNumericColumn(Component: (props: { column: Column<number> }) => Rea
     
         return <div>
             {table && <Select options={table.cols().map(it => it.name)} onChange={setSelectedColumn} />}
-            {column && <Component column={column} />}
+            {column && <Component column={column} {...props as any} />}
         </div>;
     }
 }
