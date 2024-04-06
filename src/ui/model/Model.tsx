@@ -39,9 +39,38 @@ export function getUIForBlock(props: BlockUIProps) {
     }
 }
 
+// The minimum width of a block in "columns" - This prevents grouping of too much blocks
+function minWidth(block: Readonly<Block>): 1 | 2 | 3 | 4 {
+    switch(block.type) {
+        case "datasource":
+            return 2;
+        case "javascript":
+            return 3;
+        case "markdown":
+            return 1;
+        case "visualize":
+            switch (block.graphtype) {
+                case "number":
+                    return 1;
+                case "boxplot":
+                    return 1;
+                case "histogram":
+                    return 2;
+                case "json":
+                    return 3;
+                case "table":
+                    return 4;
+            }
+        default:
+            return 4;
+    }
+}
+
 export function partitionBlocks(blocks: Readonly<Readonly<Block>[]>): Readonly<Block>[][] {
     const partitions: Block[][] = [[]];
     const currentPartition = () => partitions[partitions.length - 1];
+    const currentWidth = () => currentPartition().reduce((sum, block) => sum + minWidth(block), 0);
+
     const lastBlock = () => {
         const part = currentPartition();
         if (part.length === 0) return null;
@@ -50,6 +79,12 @@ export function partitionBlocks(blocks: Readonly<Readonly<Block>[]>): Readonly<B
     const addPartition = (block: Block) => partitions.push([block]);
 
     for(const block of blocks) {
+        if (currentWidth() + minWidth(block) > 4) {
+            // Prevent grouping blocks too much so that they would overflow 
+            addPartition(block);
+            continue;
+        }
+
         if (block.type === "datasource" && lastBlock()?.type === "datasource") {
             // Group consecutive datasources together
             currentPartition().push(block);
@@ -57,7 +92,7 @@ export function partitionBlocks(blocks: Readonly<Readonly<Block>[]>): Readonly<B
             // Group consecutive visualizations together
             // TODO: Probably need to wrap larger visuals
             currentPartition().push(block);
-        } else if (block.type === "markdown" && currentPartition().length === 1 && ["javascript", "visualize"].includes(lastBlock()!.type)) {
+        } else if (block.type === "markdown" && ["javascript", "visualize"].includes(lastBlock()!.type)) {
             // Push Markdown to the right of previous blocks
             currentPartition().push(block);
         } else {
