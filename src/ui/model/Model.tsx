@@ -15,8 +15,9 @@ import { ButtonList } from "../base/Button";
 import { IconButton } from "../base/Icons";
 import { Workspace } from "../../runtime/workspace";
 import { FileBrowser } from "../datasource/FileBrowser";
-import { File } from "../../runtime/filestore";
+import * as Filestore from "../../runtime/filestore";
 import { createDatasource } from "../../runtime/datasource/datasource";
+import { DropZone } from "../base/DropZone";
 
 export function getUIForBlock(props: BlockUIProps) {
     (props as any).key = props.blockID;
@@ -118,36 +119,43 @@ export function ModelUI({ model, workspace }: { model: CellularModel, workspace:
     const blockList = useBlockList(store);
     const partitions = partitionBlocks(blockList);
 
-    function chooseFile(file: File) {
+    function chooseFile(file: Filestore.File) {
         createDatasource(file, workspace).then(it => runtime.addBlock(it));
 
         setShowFiles(false);
     }
 
+    async function chooseBrowserFile(file: globalThis.File) {
+        const storedFile = await workspace.getFiles().addBrowserFile(file);
+        chooseFile(storedFile);
+    }
+
     return <div className="app">
         {showFiles && <FileBrowser onClose={() => setShowFiles(false)} filestore={workspace.getFiles()} onChoose={chooseFile} />}
-        <div className="app-header">
-            <div className="app-title">
-                CELLULAR <div className="app-title-model">/ {model.title}</div>
-            </div>
-            <div className="app-nav">
-                <ButtonList>
-                <IconButton icon="add" text="Add" />
-                <IconButton icon="save" />
-                <IconButton icon="settings" />
-                <IconButton icon="print" onClick={() => window.print()} />
-                </ButtonList>
+        <DropZone onFile={chooseBrowserFile}>
+            <div className="app-header">
+                <div className="app-title">
+                    CELLULAR <div className="app-title-model">/ {model.title}</div>
+                </div>
+                <div className="app-nav">
+                    <ButtonList>
+                    <IconButton icon="add" text="Add" />
+                    <IconButton icon="save" />
+                    <IconButton icon="settings" />
+                    <IconButton icon="print" onClick={() => window.print()} />
+                    </ButtonList>
 
+                </div>
             </div>
-            </div>
-            
-        {partitions.map(partition => <>
-            <BlockUI.Row>
-                {partition.map(block => getUIForBlock({ blockID: block.blockID, runtime }))}
-            </BlockUI.Row>
-            <BlockUI.Connecter />
-        </>)}
-        <AddBlock chooseFile={() => setShowFiles(true)} store={store} add={block => runtime.addBlock(block)} />
+                
+            {partitions.map(partition => <>
+                <BlockUI.Row>
+                    {partition.map(block => getUIForBlock({ blockID: block.blockID, runtime }))}
+                </BlockUI.Row>
+                <BlockUI.Connecter />
+            </>)}
+            <AddBlock chooseFile={() => setShowFiles(true)} store={store} add={block => runtime.addBlock(block)} />
+        </DropZone>
     </div>;
 
 }

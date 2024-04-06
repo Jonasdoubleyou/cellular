@@ -183,7 +183,7 @@ export class FileStore {
         return this.getFolder(file.path).hasFile(file.name);
     }
 
-    async addBrowserFile(file: globalThis.File) {
+    async addBrowserFile(file: globalThis.File): Promise<File> {
         console.log(file);
     
         const buffer = await file.arrayBuffer();
@@ -195,6 +195,8 @@ export class FileStore {
 
         this.addFile(resultFile);
         this.storeFileData(resultFile, buffer);
+
+        return resultFile;
     }
 
     async storeFileData(file: File, data: ArrayBuffer) {
